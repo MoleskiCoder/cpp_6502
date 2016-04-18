@@ -248,8 +248,24 @@ void mos6502::EOR(uint8_t data)
 
 void mos6502::ADC(uint8_t data)
 {
-	assert(false && "ADC not implemented");
-	P &= ~(F_Z & F_V & F_N & F_C);
+	uint8_t carry = (P & F_C ? 0 : 1);
+
+	uint16_t sum = A + data + carry;
+	P &= ~(F_N | F_V | F_Z | F_C);
+
+	if (!(uint8_t)sum)
+		P |= F_Z;
+	else
+		if ((int8_t)sum < 0)
+			P |= F_N;
+
+	if (~(A ^ data) & (A ^ sum) & 0x80)
+		P |= F_V;
+
+	if (sum & 0xff00)
+		P |= F_C;
+
+	A = sum;
 }
 
 void mos6502::LDA(uint8_t data)
@@ -319,6 +335,13 @@ void mos6502::BCC(int8_t data)
 	}
 }
 
+void mos6502::BCS(int8_t data)
+{
+	if (P & F_C) {
+		PC += data;
+	}
+}
+
 void mos6502::DEC(uint16_t offset)
 {
 	int8_t content = memory[offset];
@@ -381,6 +404,12 @@ void mos6502::TXS()
 	S = X;
 }
 
+void mos6502::TAY()
+{
+	Y = A;
+	reflectFlags_ZeroNegative(Y);
+}
+
 uint8_t mos6502::ASL(uint8_t data)
 {
 	P &= ~(F_N | F_Z | F_C);
@@ -397,6 +426,35 @@ uint8_t mos6502::ASL(uint8_t data)
 
 	return result;
 }
+
+uint8_t mos6502::ROL(uint8_t data)
+{
+	bool carry = P & F_C;
+
+	P &= ~(F_N | F_Z | F_C);
+
+	if (data & 0x80)
+		P |= F_C;
+
+	uint8_t result = data << 1;
+
+	if (carry)
+		result |= 0x01;
+
+	if (!result)
+		P |= F_Z;
+	else
+		if ((int8_t)result < 0)
+			P |= F_N;
+
+	return result;
+}
+
+void mos6502::CLC()
+{
+	P &= ~F_C;
+}
+
 //
 
 void mos6502::run(uint16_t offset) {
@@ -439,6 +497,11 @@ void mos6502::run(uint16_t offset) {
 				case 0b100:
 					BPL(readByte_Immediate());
 					break;
+
+				case 0b110:	 // CLC
+					CLC();
+					break;
+
 				default:
 					assert(false && "unknown BPL addressing mode");
 				}
@@ -504,6 +567,14 @@ void mos6502::run(uint16_t offset) {
 					BCC(readByte_Immediate());
 					break;
 
+				case 0b001: // STY zero page
+					writeByte_ZeroPage(Y);
+					break;
+
+				case 0b110: // TAY
+					TAY();
+					break;
+
 				default:
 					assert(false && "unknown DEY addressing mode");
 				}
@@ -526,6 +597,11 @@ void mos6502::run(uint16_t offset) {
 				case 0b111:
 					LDY(readByte_AbsoluteX());
 					break;
+
+				case 0b100:
+					BCS(readByte_Immediate());
+					break;
+
 				default:
 					assert(false && "unknown LDY addressing mode");
 				}
@@ -570,6 +646,10 @@ void mos6502::run(uint16_t offset) {
 
 				case 0b100:
 					BEQ(readByte_Immediate());
+					break;
+
+				case 0b010:
+					INX();
 					break;
 
 				default:
@@ -871,7 +951,23 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b001:	//	ROL
-				assert(false && "ROL not implemented");
+				switch (addressing_mode)
+				{
+				case 0b010:	// ROL A
+					A = ROL(A);
+					break;
+
+				case 0b111: // ROL abs,X
+					{
+						auto address = FETCH_ADDR_ABSOLUTEX;
+						auto contents = memory[address];
+						memory[address] = ROL(contents);
+					}
+					break;
+
+				default:
+					assert(false && "unknown ROL addressing mode");
+				}
 				break;
 
 			case 0b010:	//	LSR

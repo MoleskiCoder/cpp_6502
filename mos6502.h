@@ -52,6 +52,7 @@ private:
 	void BEQ(int8_t data);
 	void BNE(int8_t data);
 	void BCC(int8_t data);
+	void BCS(int8_t data);
 	void JSR();
 	void RTS();
 	void PHA();
@@ -61,8 +62,11 @@ private:
 	void TXS();
 	void INX();
 	void INY();
+	void CLC();
+	void TAY();
 
 	uint8_t ASL(uint8_t data);
+	uint8_t ROL(uint8_t data);
 
 	// get/set memory
 
