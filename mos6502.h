@@ -49,11 +49,20 @@ private:
 	void BPL(int8_t data);
 	void DEC(uint16_t offset);
 	void INC(uint16_t offset);
+	void BEQ(int8_t data);
 	void BNE(int8_t data);
 	void BCC(int8_t data);
 	void JSR();
 	void RTS();
-	//void PLA()
+	void PHA();
+	void PLA();
+	void DEX();
+	void DEY();
+	void TXS();
+	void INX();
+	void INY();
+
+	uint8_t ASL(uint8_t data);
 
 	// get/set memory
 

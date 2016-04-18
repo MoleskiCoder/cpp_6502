@@ -265,8 +265,24 @@ void mos6502::CMP(uint8_t data)
 
 void mos6502::SBC(uint8_t data)
 {
-	assert(false && "SBC not implemented");
+	uint8_t carry = (P & F_C ? 0 : 1);
+	uint16_t difference = A - data - carry;
+
 	P &= ~(F_Z & F_V & F_N & F_C);
+
+	if (!((uint8_t)difference))
+		P |= F_Z;
+	else
+		if ((int8_t)difference < 0)
+			P |= F_N;
+
+	if ((A ^ data) & (A ^ difference) & 0x80)
+		P |= F_V;
+
+	if (!(difference & 0xff00))
+		P |= F_C;
+
+	A = (uint8_t)difference;
 }
 
 void mos6502::LDX(uint8_t data)
@@ -278,6 +294,13 @@ void mos6502::LDX(uint8_t data)
 void mos6502::BPL(int8_t data)
 {
 	if (!(P & F_N)) {
+		PC += data;
+	}
+}
+
+void mos6502::BEQ(int8_t data)
+{
+	if (P & F_Z) {
 		PC += data;
 	}
 }
@@ -303,6 +326,16 @@ void mos6502::DEC(uint16_t offset)
 	reflectFlags_ZeroNegative(content);
 }
 
+void mos6502::DEX()
+{
+	reflectFlags_ZeroNegative(--X);
+}
+
+void mos6502::DEY()
+{
+	reflectFlags_ZeroNegative(--Y);
+}
+
 void mos6502::INC(uint16_t offset)
 {
 	int8_t content = memory[offset];
@@ -310,10 +343,21 @@ void mos6502::INC(uint16_t offset)
 	reflectFlags_ZeroNegative(content);
 }
 
+void mos6502::INX()
+{
+	reflectFlags_ZeroNegative(++X);
+}
+
+void mos6502::INY()
+{
+	reflectFlags_ZeroNegative(++Y);
+}
+
 void mos6502::JSR()
 {
-	pushWord(PC);
-	PC = fetchWord();
+	auto destination = fetchWord();
+	pushWord(PC + 1);
+	PC = destination;
 }
 
 void mos6502::RTS()
@@ -321,6 +365,38 @@ void mos6502::RTS()
 	PC = popWord();
 }
 
+void mos6502::PHA()
+{
+	pushByte(A);
+}
+
+void mos6502::PLA()
+{
+	A = popByte();
+	reflectFlags_ZeroNegative(A);
+}
+
+void mos6502::TXS()
+{
+	S = X;
+}
+
+uint8_t mos6502::ASL(uint8_t data)
+{
+	P &= ~(F_N | F_Z | F_C);
+
+	uint8_t result = data << 1;
+	if (!result)
+		P |= F_Z;
+	else
+		if ((uint8_t)result < 0)
+			P |= F_N;
+
+	if (data & 0x80)
+		P |= F_C;
+
+	return result;
+}
 //
 
 void mos6502::run(uint16_t offset) {
@@ -386,24 +462,46 @@ void mos6502::run(uint16_t offset) {
 				}
 				break;
 
-			case 0b010:	//	JMP
-				PC = fetchWord();
+			case 0b010:
+				switch (addressing_mode)
+				{
+				case 0b010: // PHA
+					PHA();
+					break;
+				//case 0b???:	// JMP absolute
+					//PC = fetchWord();
+					//break;
+				default:
+					assert(false && "unknown instruction");
+				}
 				break;
 
-
-			case 0b011:	//	PLA
-				A = popByte();
-				reflectFlags_ZeroNegative(A);
+			case 0b011:
+				switch (addressing_mode)
+				{
+				case 0b000: // RTS
+					RTS();
+					break;
+				case 0b010:	// PLA
+					PLA();
+					break;
+				case 0b011: // JMP (indirect)
+					PC = ABSOLUTE;
+					break;
+				default:
+					assert(false && "unknown instruction");
+				}
 				break;
 
 			case 0b100:	//	DEY
 				switch (addressing_mode)
 				{
 				case 0b010:	// Implied DEY
-					reflectFlags_ZeroNegative(--Y);
+					DEY();
 					break;
 
 				case 0b100: // BCC rel
+					BCC(readByte_Immediate());
 					break;
 
 				default:
@@ -449,6 +547,10 @@ void mos6502::run(uint16_t offset) {
 					BNE(readByte_Immediate());
 					break;
 
+				case 0b010:	// INY
+					INY();
+					break;
+
 				default:
 					assert(false && "unknown CPY addressing mode");
 				}
@@ -465,6 +567,11 @@ void mos6502::run(uint16_t offset) {
 				case 0b011:
 					CPX(readByte_Absolute());
 					break;
+
+				case 0b100:
+					BEQ(readByte_Immediate());
+					break;
+
 				default:
 					assert(false && "unknown CPX addressing mode");
 				}
@@ -753,7 +860,14 @@ void mos6502::run(uint16_t offset) {
 			switch (op_code) {
 
 			case 0b000:	//	ASL
-				assert(false && "ASL not implemented");
+				switch (addressing_mode)
+				{
+				case 0b010:	// ASL A
+					A = ASL(A);
+					break;
+				default:
+					assert(false && "unknown ASL addressing mode");
+				}
 				break;
 
 			case 0b001:	//	ROL
@@ -781,7 +895,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				case 0b110:	// TXS
-					S = X;
+					TXS();
 					break;
 
 				default:
@@ -827,7 +941,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				case 0b010:	// DEX
-					reflectFlags_ZeroNegative(--X);
+					DEX();
 					break;
 
 				default:
