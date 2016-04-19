@@ -515,7 +515,7 @@ void mos6502::run(uint16_t offset) {
 			case 0b000:	// BPL
 				switch (addressing_mode) {
 				case 0b100:
-					BPL(readByte_Immediate());
+					BPL(readByte_Immediate() + 1);
 					break;
 
 				case 0b110:	 // CLC
@@ -584,7 +584,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				case 0b100: // BCC rel
-					BCC(readByte_Immediate());
+					BCC(readByte_Immediate() + 1);
 					break;
 
 				case 0b001: // STY zero page
@@ -625,7 +625,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				case 0b100:
-					BCS(readByte_Immediate());
+					BCS(readByte_Immediate() + 1);
 					break;
 
 				default:
@@ -646,7 +646,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				case 0b100:	// BNE
-					BNE(readByte_Immediate());
+					BNE(readByte_Immediate() + 1);
 					break;
 
 				case 0b010:	// INY
@@ -671,7 +671,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				case 0b100:
-					BEQ(readByte_Immediate());
+					BEQ(readByte_Immediate() + 1);
 					break;
 
 				case 0b010:
