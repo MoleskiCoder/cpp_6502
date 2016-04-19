@@ -486,7 +486,8 @@ void mos6502::run(uint16_t offset) {
 
 	PC = offset;
 
-	for (;;) {
+	for (;;)
+	{
 		auto current = fetchByte();
 
 #ifdef _DEBUG
@@ -501,8 +502,8 @@ void mos6502::run(uint16_t offset) {
 		printf("INS=%02x: PC=%04x, A=%02x, X=%02x, Y=%02x, S=%02x\n", current, PC - 1, A, X, Y, S);
 #endif
 
-		switch (classification) {
-
+		switch (classification)
+		{
 		case 0b00:
 			/*
 			000	#immediate
@@ -1081,6 +1082,8 @@ void mos6502::run(uint16_t offset) {
 				case 0b111:
 					INC(FETCH_ADDR_ABSOLUTEX);
 					break;
+				default:
+					assert(false && "unknown INC addressing mode");
 				}
 				break;
 
@@ -1088,6 +1091,9 @@ void mos6502::run(uint16_t offset) {
 				assert(false && "unknown opcode in 10 classification");
 			}
 			break;
+
+		default:
+			assert(false && "unknown classification");
 		}
 	}
 }
