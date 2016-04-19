@@ -85,6 +85,53 @@ uint16_t mos6502::fetchWord_Indirect()
 
 //
 
+uint8_t mos6502::readByteArgument_Immediate()
+{
+	auto value = readByte_Immediate();
+#ifdef _DEBUG
+	printf("#%02x", value);
+#endif
+	return value;
+}
+
+int8_t mos6502::readByteArgument_ImmediateDisplacement()
+{
+	auto displacment = (int8_t)readByte_Immediate();
+#ifdef _DEBUG
+	printf("%d", displacment);
+#endif
+	return displacment;
+}
+
+uint8_t mos6502::readByteArgument_AbsoluteX()
+{
+	auto base = FETCH_ADDR_ABSOLUTE;
+#ifdef _DEBUG
+	printf("$%04x,X", base);
+#endif
+	return memory[base + X];
+}
+
+uint8_t mos6502::readByteArgument_AbsoluteY()
+{
+	auto base = FETCH_ADDR_ABSOLUTE;
+#ifdef _DEBUG
+	printf("$%04x,Y", base);
+#endif
+	return memory[base + Y];
+}
+
+uint8_t mos6502::readByteArgument_Absolute()
+{
+	auto address = FETCH_ADDR_ABSOLUTE;
+#ifdef _DEBUG
+	printf("$%04x", address);
+#endif
+	return memory[address];
+}
+
+//
+
 uint8_t mos6502::readByte_Immediate()
 {
 	return fetchByte();
@@ -134,7 +181,11 @@ uint8_t mos6502::readByte_AbsoluteY()
 
 void mos6502::writeByte_ZeroPage(uint8_t value)
 {
-	ZEROPAGE = value;
+	auto zp = FETCH_ADDR_ZEROPAGE;
+#ifdef _DEBUG
+	printf("$%02x", zp);
+#endif
+	memory[zp] = value;
 }
 
 void mos6502::writeByte_Absolute(uint8_t value)
@@ -169,7 +220,12 @@ void mos6502::writeByte_AbsoluteX(uint8_t value)
 
 void mos6502::writeByte_AbsoluteY(uint8_t value)
 {
-	ABSOLUTEY = value;
+	auto base = fetchWord();
+#ifdef _DEBUG
+	printf("$%04x,Y", base);
+#endif
+	auto address = (uint16_t)(base + Y);
+	memory[address] = value;
 }
 
 //
@@ -394,6 +450,9 @@ void mos6502::INY()
 void mos6502::JSR()
 {
 	auto destination = fetchWord();
+#ifdef _DEBUG
+	printf("JSR %04x", destination);
+#endif
 	pushWord(PC + 1);
 	PC = destination;
 }
@@ -499,7 +558,7 @@ void mos6502::run(uint16_t offset) {
 		auto op_code = (current & op_code_mask) >> 5;
 
 #ifdef _DEBUG
-		printf("INS=%02x: PC=%04x, A=%02x, X=%02x, Y=%02x, S=%02x\n", current, PC - 1, A, X, Y, S);
+		printf("\nINS=%02x: PC=%04x, A=%02x, X=%02x, Y=%02x, S=%02x	", current, PC - 1, A, X, Y, S);
 #endif
 
 		switch (classification)
@@ -517,10 +576,12 @@ void mos6502::run(uint16_t offset) {
 			case 0b000:	// BPL
 				switch (addressing_mode) {
 				case 0b100:
-					BPL(readByte_Immediate() + 1);
+					DISS_PREFIX(BPL);
+					BPL(readByteArgument_ImmediateDisplacement());
 					break;
 
 				case 0b110:	 // CLC
+					DISS_PREFIX(CLC);
 					CLC();
 					break;
 
@@ -532,13 +593,16 @@ void mos6502::run(uint16_t offset) {
 			case 0b001:	//	BIT
 				switch (addressing_mode) {
 				case 0b001:
+					DISS_PREFIX(BIT);
 					BIT(readByte_ZeroPage());
 					break;
 				case 0b011:
-					BIT(readByte_Absolute());
+					DISS_PREFIX(BIT);
+					BIT(readByteArgument_Absolute());
 					break;
 
 				case 0b000: // JSR
+					DISS_PREFIX(JSR);
 					JSR();
 					break;
 
@@ -551,9 +615,11 @@ void mos6502::run(uint16_t offset) {
 				switch (addressing_mode)
 				{
 				case 0b010: // PHA
+					DISS_PREFIX(PHA);
 					PHA();
 					break;
 				case 0b011:
+					DISS_PREFIX(JMP);
 					PC = fetchWord();
 					break;
 				default:
@@ -565,12 +631,15 @@ void mos6502::run(uint16_t offset) {
 				switch (addressing_mode)
 				{
 				case 0b000: // RTS
+					DISS_PREFIX(RTS);
 					RTS();
 					break;
 				case 0b010:	// PLA
+					DISS_PREFIX(PLA);
 					PLA();
 					break;
 				case 0b011: // JMP (indirect)
+					DISS_PREFIX(JMP);
 					PC = ABSOLUTE;
 					break;
 				default:
@@ -582,52 +651,64 @@ void mos6502::run(uint16_t offset) {
 				switch (addressing_mode)
 				{
 				case 0b010:	// Implied DEY
+					DISS_PREFIX(DEY);
 					DEY();
 					break;
 
 				case 0b100: // BCC rel
-					BCC(readByte_Immediate() + 1);
+					DISS_PREFIX(BCC);
+					BCC(readByteArgument_ImmediateDisplacement());
 					break;
 
 				case 0b001: // STY zero page
+					DISS_PREFIX(STY);
 					writeByte_ZeroPage(Y);
 					break;
 				case 0b011: // STY absolute
+					DISS_PREFIX(STY);
 					writeByte_Absolute(Y);
 					break;
 				case 0b101: // STY zero page, X
+					DISS_PREFIX(STY);
 					writeByte_ZeroPageX(Y);
 					break;
 
 				case 0b110: // TAY
+					DISS_PREFIX(TAY);
 					TAY();
 					break;
 
 				default:
-					assert(false && "unknown DEY/BCC/STY addressing mode");
+					assert(false && "unknown TEY/BCC/STY addressing mode");
 				}
 				break;
 
-			case 0b101:	//	LDY
+			case 0b101:
 				switch (addressing_mode) {
 				case 0b000:
-					LDY(readByte_Immediate());
+					DISS_PREFIX(LDY);
+					LDY(readByteArgument_Immediate());
 					break;
 				case 0b001:
+					DISS_PREFIX(LDY);
 					LDY(readByte_ZeroPage());
 					break;
 				case 0b011:
-					LDY(readByte_Absolute());
+					DISS_PREFIX(LDY);
+					LDY(readByteArgument_Absolute());
 					break;
 				case 0b101:
+					DISS_PREFIX(LDY);
 					LDY(readByte_ZeroPageX());
 					break;
 				case 0b111:
-					LDY(readByte_AbsoluteX());
+					DISS_PREFIX(LDY);
+					LDY(readByteArgument_AbsoluteX());
 					break;
 
 				case 0b100:
-					BCS(readByte_Immediate() + 1);
+					DISS_PREFIX(BCS);
+					BCS(readByteArgument_ImmediateDisplacement());
 					break;
 
 				default:
@@ -638,20 +719,25 @@ void mos6502::run(uint16_t offset) {
 			case 0b110:	//	CPY
 				switch (addressing_mode) {
 				case 0b000:
-					CPY(readByte_Immediate());
+					DISS_PREFIX(CPY);
+					CPY(readByteArgument_Immediate());
 					break;
 				case 0b001:
+					DISS_PREFIX(CPY);
 					CPY(readByte_ZeroPage());
 					break;
 				case 0b011:
-					CPY(readByte_Absolute());
+					DISS_PREFIX(CPY);
+					CPY(readByteArgument_Absolute());
 					break;
 
 				case 0b100:	// BNE
-					BNE(readByte_Immediate() + 1);
+					DISS_PREFIX(BNE);
+					BNE(readByteArgument_ImmediateDisplacement());
 					break;
 
 				case 0b010:	// INY
+					DISS_PREFIX(INY);
 					INY();
 					break;
 
@@ -663,20 +749,25 @@ void mos6502::run(uint16_t offset) {
 			case 0b111:	//	CPX
 				switch (addressing_mode) {
 				case 0b000:
-					CPX(readByte_Immediate());
+					DISS_PREFIX(CPX);
+					CPX(readByteArgument_Immediate());
 					break;
 				case 0b001:
+					DISS_PREFIX(CPX);
 					CPX(readByte_ZeroPage());
 					break;
 				case 0b011:
-					CPX(readByte_Absolute());
+					DISS_PREFIX(CPX);
+					CPX(readByteArgument_Absolute());
 					break;
 
 				case 0b100:
-					BEQ(readByte_Immediate() + 1);
+					DISS_PREFIX(BEQ);
+					BEQ(readByteArgument_ImmediateDisplacement());
 					break;
 
 				case 0b010:
+					DISS_PREFIX(INX);
 					INX();
 					break;
 
@@ -706,6 +797,7 @@ void mos6502::run(uint16_t offset) {
 			switch (op_code) {
 
 			case 0b000:	//	ORA
+				DISS_PREFIX(ORA);
 				switch (addressing_mode) {
 				case 0b000:
 					ORA(readByte_IndexedIndirectX());
@@ -714,10 +806,10 @@ void mos6502::run(uint16_t offset) {
 					ORA(readByte_ZeroPage());
 					break;
 				case 0b010:
-					ORA(readByte_Immediate());
+					ORA(readByteArgument_Immediate());
 					break;
 				case 0b011:
-					ORA(readByte_Absolute());
+					ORA(readByteArgument_Absolute());
 					break;
 				case 0b100:
 					ORA(readByte_IndirectIndexedY());
@@ -726,10 +818,10 @@ void mos6502::run(uint16_t offset) {
 					ORA(readByte_ZeroPageX());
 					break;
 				case 0b110:
-					ORA(readByte_AbsoluteY());
+					ORA(readByteArgument_AbsoluteY());
 					break;
 				case 0b111:
-					ORA(readByte_AbsoluteX());
+					ORA(readByteArgument_AbsoluteX());
 					break;
 				default:
 					assert(false && "unknown ORA addressing mode");
@@ -737,6 +829,7 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b001:	//	AND
+				DISS_PREFIX(AND);
 				switch (addressing_mode) {
 				case 0b000:
 					AND(readByte_IndexedIndirectX());
@@ -745,10 +838,10 @@ void mos6502::run(uint16_t offset) {
 					AND(readByte_ZeroPage());
 					break;
 				case 0b010:
-					AND(readByte_Immediate());
+					AND(readByteArgument_Immediate());
 					break;
 				case 0b011:
-					AND(readByte_Absolute());
+					AND(readByteArgument_Absolute());
 					break;
 				case 0b100:
 					AND(readByte_IndirectIndexedY());
@@ -757,10 +850,10 @@ void mos6502::run(uint16_t offset) {
 					AND(readByte_ZeroPageX());
 					break;
 				case 0b110:
-					AND(readByte_AbsoluteY());
+					AND(readByteArgument_AbsoluteY());
 					break;
 				case 0b111:
-					AND(readByte_AbsoluteX());
+					AND(readByteArgument_AbsoluteX());
 					break;
 				default:
 					assert(false && "unknown AND addressing mode");
@@ -768,6 +861,7 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b010:	//	EOR
+				DISS_PREFIX(EOR);
 				switch (addressing_mode) {
 				case 0b000:
 					EOR(readByte_IndexedIndirectX());
@@ -776,10 +870,10 @@ void mos6502::run(uint16_t offset) {
 					EOR(readByte_ZeroPage());
 					break;
 				case 0b010:
-					EOR(readByte_Immediate());
+					EOR(readByteArgument_Immediate());
 					break;
 				case 0b011:
-					EOR(readByte_Absolute());
+					EOR(readByteArgument_Absolute());
 					break;
 				case 0b100:
 					EOR(readByte_IndirectIndexedY());
@@ -788,10 +882,10 @@ void mos6502::run(uint16_t offset) {
 					EOR(readByte_ZeroPageX());
 					break;
 				case 0b110:
-					EOR(readByte_AbsoluteY());
+					EOR(readByteArgument_AbsoluteY());
 					break;
 				case 0b111:
-					EOR(readByte_AbsoluteX());
+					EOR(readByteArgument_AbsoluteX());
 					break;
 				default:
 					assert(false && "unknown EOR addressing mode");
@@ -799,6 +893,7 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b011:	//	ADC
+				DISS_PREFIX(ADC);
 				switch (addressing_mode) {
 				case 0b000:
 					ADC(readByte_IndexedIndirectX());
@@ -807,10 +902,10 @@ void mos6502::run(uint16_t offset) {
 					ADC(readByte_ZeroPage());
 					break;
 				case 0b010:
-					ADC(readByte_Immediate());
+					ADC(readByteArgument_Immediate());
 					break;
 				case 0b011:
-					ADC(readByte_Absolute());
+					ADC(readByteArgument_Absolute());
 					break;
 				case 0b100:
 					ADC(readByte_IndirectIndexedY());
@@ -819,10 +914,10 @@ void mos6502::run(uint16_t offset) {
 					ADC(readByte_ZeroPageX());
 					break;
 				case 0b110:
-					EOR(readByte_AbsoluteY());
+					EOR(readByteArgument_AbsoluteY());
 					break;
 				case 0b111:
-					ADC(readByte_AbsoluteX());
+					ADC(readByteArgument_AbsoluteX());
 					break;
 				default:
 					assert(false && "unknown ADC addressing mode");
@@ -830,6 +925,7 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b100:	//	STA
+				DISS_PREFIX(STA);
 				switch (addressing_mode) {
 				case 0b000:
 					writeByte_IndexedIndirectX(A);
@@ -858,6 +954,7 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b101:	//	LDA
+				DISS_PREFIX(LDA);
 				switch (addressing_mode) {
 				case 0b000:
 					LDA(readByte_IndexedIndirectX());
@@ -866,10 +963,10 @@ void mos6502::run(uint16_t offset) {
 					LDA(readByte_ZeroPage());
 					break;
 				case 0b010:
-					LDA(readByte_Immediate());
+					LDA(readByteArgument_Immediate());
 					break;
 				case 0b011:
-					LDA(readByte_Absolute());
+					LDA(readByteArgument_Absolute());
 					break;
 				case 0b100:
 					LDA(readByte_IndirectIndexedY());
@@ -878,10 +975,10 @@ void mos6502::run(uint16_t offset) {
 					LDA(readByte_ZeroPageX());
 					break;
 				case 0b110:
-					LDA(readByte_AbsoluteY());
+					LDA(readByteArgument_AbsoluteY());
 					break;
 				case 0b111:
-					LDA(readByte_AbsoluteX());
+					LDA(readByteArgument_AbsoluteX());
 					break;
 				default:
 					assert(false && "unknown LDA addressing mode");
@@ -889,6 +986,7 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b110:	//	CMP
+				DISS_PREFIX(CMP);
 				switch (addressing_mode) {
 				case 0b000:
 					CMP(readByte_IndexedIndirectX());
@@ -897,10 +995,10 @@ void mos6502::run(uint16_t offset) {
 					CMP(readByte_ZeroPage());
 					break;
 				case 0b010:
-					CMP(readByte_Immediate());
+					CMP(readByteArgument_Immediate());
 					break;
 				case 0b011:
-					CMP(readByte_Absolute());
+					CMP(readByteArgument_Absolute());
 					break;
 				case 0b100:
 					CMP(readByte_IndirectIndexedY());
@@ -909,10 +1007,10 @@ void mos6502::run(uint16_t offset) {
 					CMP(readByte_ZeroPageX());
 					break;
 				case 0b110:
-					CMP(readByte_AbsoluteY());
+					CMP(readByteArgument_AbsoluteY());
 					break;
 				case 0b111:
-					CMP(readByte_AbsoluteX());
+					CMP(readByteArgument_AbsoluteX());
 					break;
 				default:
 					assert(false && "unknown CMP addressing mode");
@@ -920,6 +1018,7 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b111:	//	SBC
+				DISS_PREFIX(SBC);
 				switch (addressing_mode) {
 				case 0b000:
 					SBC(readByte_IndexedIndirectX());
@@ -928,10 +1027,10 @@ void mos6502::run(uint16_t offset) {
 					SBC(readByte_ZeroPage());
 					break;
 				case 0b010:
-					SBC(readByte_Immediate());
+					SBC(readByteArgument_Immediate());
 					break;
 				case 0b011:
-					SBC(readByte_Absolute());
+					SBC(readByteArgument_Absolute());
 					break;
 				case 0b100:
 					SBC(readByte_IndirectIndexedY());
@@ -940,10 +1039,10 @@ void mos6502::run(uint16_t offset) {
 					SBC(readByte_ZeroPageX());
 					break;
 				case 0b110:
-					SBC(readByte_AbsoluteY());
+					SBC(readByteArgument_AbsoluteY());
 					break;
 				case 0b111:
-					SBC(readByte_AbsoluteX());
+					SBC(readByteArgument_AbsoluteX());
 					break;
 				default:
 					assert(false && "unknown SBC addressing mode");
@@ -968,6 +1067,7 @@ void mos6502::run(uint16_t offset) {
 			switch (op_code) {
 
 			case 0b000:	//	ASL
+				DISS_PREFIX(ASL);
 				switch (addressing_mode)
 				{
 				case 0b010:	// ASL A
@@ -979,6 +1079,7 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b001:	//	ROL
+				DISS_PREFIX(ROL);
 				switch (addressing_mode)
 				{
 				case 0b010:	// ROL A
@@ -994,26 +1095,32 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b010:	//	LSR
+				DISS_PREFIX(LSR);
 				assert(false && "LSR not implemented");
 				break;
 
 			case 0b011:	//	ROR
+				DISS_PREFIX(ROR);
 				assert(false && "ROR not implemented");
 				break;
 
 			case 0b100:	//	STX
 				switch (addressing_mode) {
 				case 0b001:
+					DISS_PREFIX(STX);
 					writeByte_ZeroPage(X);
 					break;
 				case 0b011:
+					DISS_PREFIX(STX);
 					writeByte_Absolute(X);
 					break;
 				case 0b101:
+					DISS_PREFIX(STX);
 					writeByte_ZeroPageY(X);
 					break;
 
 				case 0b110:	// TXS
+					DISS_PREFIX(TXS);
 					TXS();
 					break;
 
@@ -1023,21 +1130,22 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b101:	//	LDX
+				DISS_PREFIX(LDX);
 				switch (addressing_mode) {
 				case 0b000:
-					LDX(readByte_Immediate());
+					LDX(readByteArgument_Immediate());
 					break;
 				case 0b001:
 					LDX(readByte_ZeroPage());
 					break;
 				case 0b011:
-					LDX(readByte_Absolute());
+					LDX(readByteArgument_Absolute());
 					break;
 				case 0b101:
 					LDX(readByte_ZeroPageY());
 					break;
 				case 0b111:
-					LDX(readByte_AbsoluteY());
+					LDX(readByteArgument_AbsoluteY());
 					break;
 				default:
 					assert(false && "unknown LDX addressing mode");
@@ -1047,19 +1155,24 @@ void mos6502::run(uint16_t offset) {
 			case 0b110:	//	DEC
 				switch (addressing_mode) {
 				case 0b001:
+					DISS_PREFIX(DEC);
 					DEC(FETCH_ADDR_ZEROPAGE);
 					break;
 				case 0b011:
+					DISS_PREFIX(DEC);
 					DEC(FETCH_ADDR_ABSOLUTE);
 					break;
 				case 0b101:
+					DISS_PREFIX(DEC);
 					DEC(FETCH_ADDR_ZEROPAGEX);
 					break;
 				case 0b111:
+					DISS_PREFIX(DEC);
 					DEC(FETCH_ADDR_ABSOLUTEX);
 					break;
 
 				case 0b010:	// DEX
+					DISS_PREFIX(DEX);
 					DEX();
 					break;
 
@@ -1069,6 +1182,7 @@ void mos6502::run(uint16_t offset) {
 				break;
 
 			case 0b111:	//	INC
+				DISS_PREFIX(INC);
 				switch (addressing_mode) {
 				case 0b001:
 					INC(FETCH_ADDR_ZEROPAGE);

@@ -3,6 +3,12 @@
 #include <vector>
 #include <map>
 
+#ifdef _DEBUG
+#	define DISS_PREFIX(x)	printf(#x " ")
+#else
+#	define DISS_PREFIX(x)
+#endif
+
 #define FIRST_PAGE 0x100
 
 #define FETCH_ADDR_ZEROPAGE				fetchByte()
@@ -89,6 +95,15 @@ private:
 
 	uint16_t fetchWord();
 	uint16_t fetchWord_Indirect();
+
+	//
+
+	int8_t readByteArgument_ImmediateDisplacement();
+
+	uint8_t readByteArgument_Immediate();
+	uint8_t readByteArgument_Absolute();
+	uint8_t readByteArgument_AbsoluteX();
+	uint8_t readByteArgument_AbsoluteY();
 
 	//
 
