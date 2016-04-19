@@ -1036,7 +1036,7 @@ void mos6502::run(uint16_t offset) {
 				case 0b011:
 					LDX(readByte_Absolute());
 					break;
-				case 0b110:
+				case 0b101:
 					LDX(readByte_ZeroPageY());
 					break;
 				case 0b111:
