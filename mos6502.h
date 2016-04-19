@@ -5,19 +5,23 @@
 
 #define FIRST_PAGE 0x100
 
-#define FETCH_ADDR_ZEROPAGE		fetchByte()
-#define FETCH_ADDR_ABSOLUTE		fetchWord()
-#define FETCH_ADDR_ZEROPAGEX	getWord(memory[fetchByte() + X])
-#define FETCH_ADDR_ZEROPAGEY	getWord(memory[fetchByte()]) + Y
-#define FETCH_ADDR_ABSOLUTEX	fetchWord() + X
-#define FETCH_ADDR_ABSOLUTEY	fetchWord() + Y
+#define FETCH_ADDR_ZEROPAGE				fetchByte()
+#define FETCH_ADDR_ABSOLUTE				fetchWord()
+#define FETCH_ADDR_INDEXEDINDIRECTX		getWord(memory[lowByte(fetchByte() + X)])
+#define FETCH_ADDR_INDIRECTINDEXEDY		getWord(memory[fetchByte()]) + Y
+#define FETCH_ADDR_ZEROPAGEX			lowByte(fetchByte() + X)
+#define FETCH_ADDR_ZEROPAGEY			lowByte(fetchByte() + Y)
+#define FETCH_ADDR_ABSOLUTEX			fetchWord() + X
+#define FETCH_ADDR_ABSOLUTEY			fetchWord() + Y
 
-#define ZEROPAGE	memory[FETCH_ADDR_ZEROPAGE]
-#define ABSOLUTE	memory[FETCH_ADDR_ABSOLUTE]
-#define ZEROPAGEX	memory[FETCH_ADDR_ZEROPAGEX]
-#define ZEROPAGEY	memory[FETCH_ADDR_ZEROPAGEY]
-#define ABSOLUTEX	memory[FETCH_ADDR_ABSOLUTEX]
-#define ABSOLUTEY	memory[FETCH_ADDR_ABSOLUTEY]
+#define ZEROPAGE			memory[FETCH_ADDR_ZEROPAGE]
+#define ABSOLUTE			memory[FETCH_ADDR_ABSOLUTE]
+#define INDEXEDINDIRECTX	memory[FETCH_ADDR_INDEXEDINDIRECTX]
+#define INDIRECTINDEXEDY	memory[FETCH_ADDR_INDIRECTINDEXEDY]
+#define ZEROPAGEX			memory[FETCH_ADDR_ZEROPAGEX]
+#define ZEROPAGEY			memory[FETCH_ADDR_ZEROPAGEY]
+#define ABSOLUTEX			memory[FETCH_ADDR_ABSOLUTEX]
+#define ABSOLUTEY			memory[FETCH_ADDR_ABSOLUTEY]
 
 class mos6502
 {
@@ -90,6 +94,8 @@ private:
 	uint8_t readByte_Immediate();
 	uint8_t readByte_ZeroPage();
 	uint8_t readByte_Absolute();
+	uint8_t readByte_IndexedIndirectX();
+	uint8_t readByte_IndirectIndexedY();
 	uint8_t readByte_ZeroPageX();
 	uint8_t readByte_ZeroPageY();
 	uint8_t readByte_AbsoluteX();
@@ -97,6 +103,8 @@ private:
 
 	void writeByte_ZeroPage(uint8_t value);
 	void writeByte_Absolute(uint8_t value);
+	void writeByte_IndexedIndirectX(uint8_t value);
+	void writeByte_IndirectIndexedY(uint8_t value);
 	void writeByte_ZeroPageX(uint8_t value);
 	void writeByte_ZeroPageY(uint8_t value);
 	void writeByte_AbsoluteX(uint8_t value);

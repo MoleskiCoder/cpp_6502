@@ -100,6 +100,16 @@ uint8_t mos6502::readByte_Absolute()
 	return ABSOLUTE;
 }
 
+uint8_t mos6502::readByte_IndexedIndirectX()
+{
+	return INDEXEDINDIRECTX;
+}
+
+uint8_t mos6502::readByte_IndirectIndexedY()
+{
+	return INDIRECTINDEXEDY;
+}
+
 uint8_t mos6502::readByte_ZeroPageX()
 {
 	return ZEROPAGEX;
@@ -130,6 +140,16 @@ void mos6502::writeByte_ZeroPage(uint8_t value)
 void mos6502::writeByte_Absolute(uint8_t value)
 {
 	ABSOLUTE = value;
+}
+
+void mos6502::writeByte_IndexedIndirectX(uint8_t value)
+{
+	INDEXEDINDIRECTX = value;
+}
+
+void mos6502::writeByte_IndirectIndexedY(uint8_t value)
+{
+	INDIRECTINDEXEDY = value;
 }
 
 void mos6502::writeByte_ZeroPageX(uint8_t value)
@@ -265,7 +285,7 @@ void mos6502::ADC(uint8_t data)
 	if (sum & 0xff00)
 		P |= F_C;
 
-	A = sum;
+	A = (uint8_t)sum;
 }
 
 void mos6502::LDA(uint8_t data)
@@ -531,9 +551,9 @@ void mos6502::run(uint16_t offset) {
 				case 0b010: // PHA
 					PHA();
 					break;
-				//case 0b???:	// JMP absolute
-					//PC = fetchWord();
-					//break;
+				case 0b011:
+					PC = fetchWord();
+					break;
 				default:
 					assert(false && "unknown instruction");
 				}
@@ -569,6 +589,12 @@ void mos6502::run(uint16_t offset) {
 
 				case 0b001: // STY zero page
 					writeByte_ZeroPage(Y);
+					break;
+				case 0b011: // STY absolute
+					writeByte_Absolute(Y);
+					break;
+				case 0b101: // STY zero page, X
+					writeByte_ZeroPageX(Y);
 					break;
 
 				case 0b110: // TAY
@@ -680,7 +706,7 @@ void mos6502::run(uint16_t offset) {
 			case 0b000:	//	ORA
 				switch (addressing_mode) {
 				case 0b000:
-					ORA(readByte_ZeroPageX());
+					ORA(readByte_IndexedIndirectX());
 					break;
 				case 0b001:
 					ORA(readByte_ZeroPage());
@@ -692,7 +718,7 @@ void mos6502::run(uint16_t offset) {
 					ORA(readByte_Absolute());
 					break;
 				case 0b100:
-					ORA(readByte_ZeroPageY());
+					ORA(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
 					ORA(readByte_ZeroPageX());
@@ -711,7 +737,7 @@ void mos6502::run(uint16_t offset) {
 			case 0b001:	//	AND
 				switch (addressing_mode) {
 				case 0b000:
-					AND(readByte_ZeroPageX());
+					AND(readByte_IndexedIndirectX());
 					break;
 				case 0b001:
 					AND(readByte_ZeroPage());
@@ -723,7 +749,7 @@ void mos6502::run(uint16_t offset) {
 					AND(readByte_Absolute());
 					break;
 				case 0b100:
-					AND(readByte_ZeroPageY());
+					AND(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
 					AND(readByte_ZeroPageX());
@@ -742,7 +768,7 @@ void mos6502::run(uint16_t offset) {
 			case 0b010:	//	EOR
 				switch (addressing_mode) {
 				case 0b000:
-					EOR(readByte_ZeroPageX());
+					EOR(readByte_IndexedIndirectX());
 					break;
 				case 0b001:
 					EOR(readByte_ZeroPage());
@@ -754,7 +780,7 @@ void mos6502::run(uint16_t offset) {
 					EOR(readByte_Absolute());
 					break;
 				case 0b100:
-					EOR(readByte_ZeroPageY());
+					EOR(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
 					EOR(readByte_ZeroPageX());
@@ -773,7 +799,7 @@ void mos6502::run(uint16_t offset) {
 			case 0b011:	//	ADC
 				switch (addressing_mode) {
 				case 0b000:
-					ADC(readByte_ZeroPageX());
+					ADC(readByte_IndexedIndirectX());
 					break;
 				case 0b001:
 					ADC(readByte_ZeroPage());
@@ -785,7 +811,7 @@ void mos6502::run(uint16_t offset) {
 					ADC(readByte_Absolute());
 					break;
 				case 0b100:
-					ADC(readByte_ZeroPageY());
+					ADC(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
 					ADC(readByte_ZeroPageX());
@@ -804,7 +830,7 @@ void mos6502::run(uint16_t offset) {
 			case 0b100:	//	STA
 				switch (addressing_mode) {
 				case 0b000:
-					writeByte_ZeroPageX(A);
+					writeByte_IndexedIndirectX(A);
 					break;
 				case 0b001:
 					writeByte_ZeroPage(A);
@@ -813,7 +839,7 @@ void mos6502::run(uint16_t offset) {
 					writeByte_Absolute(A);
 					break;
 				case 0b100:
-					writeByte_ZeroPageY(A);
+					writeByte_IndirectIndexedY(A);
 					break;
 				case 0b101:
 					writeByte_ZeroPageX(A);
@@ -832,7 +858,7 @@ void mos6502::run(uint16_t offset) {
 			case 0b101:	//	LDA
 				switch (addressing_mode) {
 				case 0b000:
-					LDA(readByte_ZeroPageX());
+					LDA(readByte_IndexedIndirectX());
 					break;
 				case 0b001:
 					LDA(readByte_ZeroPage());
@@ -844,7 +870,7 @@ void mos6502::run(uint16_t offset) {
 					LDA(readByte_Absolute());
 					break;
 				case 0b100:
-					LDA(readByte_ZeroPageY());
+					LDA(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
 					LDA(readByte_ZeroPageX());
@@ -863,7 +889,7 @@ void mos6502::run(uint16_t offset) {
 			case 0b110:	//	CMP
 				switch (addressing_mode) {
 				case 0b000:
-					CMP(readByte_ZeroPageX());
+					CMP(readByte_IndexedIndirectX());
 					break;
 				case 0b001:
 					CMP(readByte_ZeroPage());
@@ -875,7 +901,7 @@ void mos6502::run(uint16_t offset) {
 					CMP(readByte_Absolute());
 					break;
 				case 0b100:
-					CMP(readByte_ZeroPageY());
+					CMP(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
 					CMP(readByte_ZeroPageX());
@@ -894,7 +920,7 @@ void mos6502::run(uint16_t offset) {
 			case 0b111:	//	SBC
 				switch (addressing_mode) {
 				case 0b000:
-					SBC(readByte_ZeroPageX());
+					SBC(readByte_IndexedIndirectX());
 					break;
 				case 0b001:
 					SBC(readByte_ZeroPage());
@@ -906,7 +932,7 @@ void mos6502::run(uint16_t offset) {
 					SBC(readByte_Absolute());
 					break;
 				case 0b100:
-					SBC(readByte_ZeroPageY());
+					SBC(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
 					SBC(readByte_ZeroPageX());
