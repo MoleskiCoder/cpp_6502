@@ -103,6 +103,24 @@ int8_t mos6502::readByteArgument_ImmediateDisplacement()
 	return displacment;
 }
 
+uint8_t mos6502::readByteArgument_ZeroPageX()
+{
+	auto zp = fetchByte();
+#ifdef _DEBUG
+	printf("%02x,X", zp);
+#endif
+	return memory[lowByte(zp + X)];
+}
+
+uint8_t mos6502::readByteArgument_ZeroPageY()
+{
+	auto zp = fetchByte();
+#ifdef _DEBUG
+	printf("%02x,Y", zp);
+#endif
+	return memory[lowByte(zp + Y)];
+}
+
 uint8_t mos6502::readByteArgument_AbsoluteX()
 {
 	auto base = FETCH_ADDR_ABSOLUTE;
@@ -205,7 +223,11 @@ void mos6502::writeByte_IndirectIndexedY(uint8_t value)
 
 void mos6502::writeByte_ZeroPageX(uint8_t value)
 {
-	ZEROPAGEX = value;
+	auto zp = FETCH_ADDR_ZEROPAGE;
+#ifdef _DEBUG
+	printf("$%02x", zp);
+#endif
+	memory[lowByte(zp + X)] = value;
 }
 
 void mos6502::writeByte_ZeroPageY(uint8_t value)
@@ -451,7 +473,7 @@ void mos6502::JSR()
 {
 	auto destination = fetchWord();
 #ifdef _DEBUG
-	printf("JSR %04x", destination);
+	printf("JSR $%04x", destination);
 #endif
 	pushWord(PC + 1);
 	PC = destination;
@@ -602,7 +624,6 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				case 0b000: // JSR
-					DISS_PREFIX(JSR);
 					JSR();
 					break;
 
@@ -699,7 +720,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 				case 0b101:
 					DISS_PREFIX(LDY);
-					LDY(readByte_ZeroPageX());
+					LDY(readByteArgument_ZeroPageX());
 					break;
 				case 0b111:
 					DISS_PREFIX(LDY);
@@ -815,7 +836,7 @@ void mos6502::run(uint16_t offset) {
 					ORA(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
-					ORA(readByte_ZeroPageX());
+					ORA(readByteArgument_ZeroPageX());
 					break;
 				case 0b110:
 					ORA(readByteArgument_AbsoluteY());
@@ -847,7 +868,7 @@ void mos6502::run(uint16_t offset) {
 					AND(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
-					AND(readByte_ZeroPageX());
+					AND(readByteArgument_ZeroPageX());
 					break;
 				case 0b110:
 					AND(readByteArgument_AbsoluteY());
@@ -879,7 +900,7 @@ void mos6502::run(uint16_t offset) {
 					EOR(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
-					EOR(readByte_ZeroPageX());
+					EOR(readByteArgument_ZeroPageX());
 					break;
 				case 0b110:
 					EOR(readByteArgument_AbsoluteY());
@@ -911,7 +932,7 @@ void mos6502::run(uint16_t offset) {
 					ADC(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
-					ADC(readByte_ZeroPageX());
+					ADC(readByteArgument_ZeroPageX());
 					break;
 				case 0b110:
 					EOR(readByteArgument_AbsoluteY());
@@ -972,7 +993,7 @@ void mos6502::run(uint16_t offset) {
 					LDA(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
-					LDA(readByte_ZeroPageX());
+					LDA(readByteArgument_ZeroPageX());
 					break;
 				case 0b110:
 					LDA(readByteArgument_AbsoluteY());
@@ -1004,7 +1025,7 @@ void mos6502::run(uint16_t offset) {
 					CMP(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
-					CMP(readByte_ZeroPageX());
+					CMP(readByteArgument_ZeroPageX());
 					break;
 				case 0b110:
 					CMP(readByteArgument_AbsoluteY());
@@ -1036,7 +1057,7 @@ void mos6502::run(uint16_t offset) {
 					SBC(readByte_IndirectIndexedY());
 					break;
 				case 0b101:
-					SBC(readByte_ZeroPageX());
+					SBC(readByteArgument_ZeroPageX());
 					break;
 				case 0b110:
 					SBC(readByteArgument_AbsoluteY());
@@ -1142,7 +1163,7 @@ void mos6502::run(uint16_t offset) {
 					LDX(readByteArgument_Absolute());
 					break;
 				case 0b101:
-					LDX(readByte_ZeroPageY());
+					LDX(readByteArgument_ZeroPageY());
 					break;
 				case 0b111:
 					LDX(readByteArgument_AbsoluteY());
