@@ -11,8 +11,8 @@
 #define FETCH_ADDR_INDIRECTINDEXEDY		getWord(memory[fetchByte()]) + Y
 #define FETCH_ADDR_ZEROPAGEX			lowByte(fetchByte() + X)
 #define FETCH_ADDR_ZEROPAGEY			lowByte(fetchByte() + Y)
-#define FETCH_ADDR_ABSOLUTEX			fetchWord() + X
-#define FETCH_ADDR_ABSOLUTEY			fetchWord() + Y
+#define FETCH_ADDR_ABSOLUTEX			(uint16_t)(fetchWord() + X)
+#define FETCH_ADDR_ABSOLUTEY			(uint16_t)(fetchWord() + Y)
 
 #define ZEROPAGE			memory[FETCH_ADDR_ZEROPAGE]
 #define ABSOLUTE			memory[FETCH_ADDR_ABSOLUTE]
@@ -68,6 +68,7 @@ private:
 	void INY();
 	void CLC();
 	void TAY();
+	void ROL(uint16_t offset);
 
 	uint8_t ASL(uint8_t data);
 	uint8_t ROL(uint8_t data);

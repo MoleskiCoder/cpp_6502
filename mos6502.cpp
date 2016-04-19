@@ -196,7 +196,7 @@ void mos6502::updateFlags_ZeroNegative(uint8_t value)
 
 void mos6502::reflectFlags_ZeroNegative(uint8_t value)
 {
-	P &= ~(F_N & F_Z);
+	P &= ~(F_N | F_Z);
 	updateFlags_ZeroNegative(value);
 }
 
@@ -220,7 +220,7 @@ void mos6502::CMP(uint8_t first, uint8_t second)
 
 void mos6502::BIT(uint8_t data)
 {
-	P &= ~(F_Z & F_V & F_N);
+	P &= ~(F_Z | F_V | F_N);
 
 	if (A & data)
 		P |= F_Z;
@@ -304,7 +304,7 @@ void mos6502::SBC(uint8_t data)
 	uint8_t carry = (P & F_C ? 0 : 1);
 	uint16_t difference = A - data - carry;
 
-	P &= ~(F_Z & F_V & F_N & F_C);
+	P &= ~(F_Z | F_V | F_N | F_C);
 
 	if (!((uint8_t)difference))
 		P |= F_Z;
@@ -329,37 +329,32 @@ void mos6502::LDX(uint8_t data)
 
 void mos6502::BPL(int8_t data)
 {
-	if (!(P & F_N)) {
+	if (!(P & F_N))
 		PC += data;
-	}
 }
 
 void mos6502::BEQ(int8_t data)
 {
-	if (P & F_Z) {
+	if (P & F_Z)
 		PC += data;
-	}
 }
 
 void mos6502::BNE(int8_t data)
 {
-	if (!(P & F_Z)) {
+	if (!(P & F_Z))
 		PC += data;
-	}
 }
 
 void mos6502::BCC(int8_t data)
 {
-	if (!(P & F_C)) {
+	if (!(P & F_C))
 		PC += data;
-	}
 }
 
 void mos6502::BCS(int8_t data)
 {
-	if (P & F_C) {
+	if (P & F_C)
 		PC += data;
-	}
 }
 
 void mos6502::DEC(uint16_t offset)
@@ -470,6 +465,12 @@ uint8_t mos6502::ROL(uint8_t data)
 	return result;
 }
 
+void mos6502::ROL(uint16_t offset)
+{
+	auto contents = memory[offset];
+	memory[offset] = ROL(contents);
+}
+
 void mos6502::CLC()
 {
 	P &= ~F_C;
@@ -523,7 +524,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				default:
-					assert(false && "unknown BPL addressing mode");
+					assert(false && "unknown BPL/CLC addressing mode");
 				}
 				break;
 
@@ -541,7 +542,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				default:
-					assert(false && "unknown BIT addressing mode");
+					assert(false && "unknown BIT/JSR addressing mode");
 				}
 				break;
 
@@ -555,7 +556,7 @@ void mos6502::run(uint16_t offset) {
 					PC = fetchWord();
 					break;
 				default:
-					assert(false && "unknown instruction");
+					assert(false && "unknown PHA/JMP instruction");
 				}
 				break;
 
@@ -572,7 +573,7 @@ void mos6502::run(uint16_t offset) {
 					PC = ABSOLUTE;
 					break;
 				default:
-					assert(false && "unknown instruction");
+					assert(false && "unknown RTS/PLA/JMP addressing_mode");
 				}
 				break;
 
@@ -602,7 +603,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				default:
-					assert(false && "unknown DEY addressing mode");
+					assert(false && "unknown DEY/BCC/STY addressing mode");
 				}
 				break;
 
@@ -629,7 +630,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				default:
-					assert(false && "unknown LDY addressing mode");
+					assert(false && "unknown LDY/BCS addressing mode");
 				}
 				break;
 
@@ -654,7 +655,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				default:
-					assert(false && "unknown CPY addressing mode");
+					assert(false && "unknown CPY/BNE/INY addressing mode");
 				}
 				break;
 
@@ -679,7 +680,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				default:
-					assert(false && "unknown CPX addressing mode");
+					assert(false && "unknown CPX/BEQ/INX addressing mode");
 				}
 				break;
 
@@ -982,13 +983,8 @@ void mos6502::run(uint16_t offset) {
 				case 0b010:	// ROL A
 					A = ROL(A);
 					break;
-
 				case 0b111: // ROL abs,X
-					{
-						auto address = FETCH_ADDR_ABSOLUTEX;
-						auto contents = memory[address];
-						memory[address] = ROL(contents);
-					}
+					ROL(FETCH_ADDR_ABSOLUTEX);
 					break;
 
 				default:
@@ -1021,7 +1017,7 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				default:
-					assert(false && "unknown STX addressing mode");
+					assert(false && "unknown STX/TXS addressing mode");
 				}
 				break;
 
@@ -1067,15 +1063,11 @@ void mos6502::run(uint16_t offset) {
 					break;
 
 				default:
-					assert(false && "unknown DEC addressing mode");
+					assert(false && "unknown DEC/DEX addressing mode");
 				}
 				break;
 
 			case 0b111:	//	INC
-				// zero page
-				// zero page, x
-				// absolute
-				// absolute, x
 				switch (addressing_mode) {
 				case 0b001:
 					INC(FETCH_ADDR_ZEROPAGE);
