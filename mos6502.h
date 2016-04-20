@@ -4,10 +4,19 @@
 #include <map>
 
 #ifdef _DEBUG
-#	define DISS_PREFIX(x)	printf(#x " ")
+#	define DISS_PREFIX(x)	printf("	" #x " ")
 #else
 #	define DISS_PREFIX(x)
 #endif
+
+#ifdef _DEBUG
+#	define DUMP_BYTE(x)		printf("%02x", getByte(x))
+#	define DUMP_DBYTE(x)	DUMP_BYTE(x), DUMP_BYTE(x + 1);
+#else
+#	define DUMP_BYTE(x)
+#	define DUMP_DBYTE(x)
+#endif
+
 
 #define FIRST_PAGE 0x100
 
@@ -75,6 +84,7 @@ private:
 	void CLC();
 	void TAY();
 	void ROL(uint16_t offset);
+	void BRK();
 
 	uint8_t ASL(uint8_t data);
 	uint8_t ROL(uint8_t data);
