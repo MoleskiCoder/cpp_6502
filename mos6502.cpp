@@ -1389,29 +1389,20 @@ void mos6502::step()
 		case 0b110:	//	DEC
 			switch (addressing_mode) {
 			case 0b001:
-				DUMP_BYTE(PC);
-				DUMP_PREFIX(DEC);
-				DEC(fetchByte());
+				ACTION_ZP(DEC);
 				break;
 			case 0b011:
-				DUMP_DBYTE(PC);
-				DUMP_PREFIX(DEC);
-				DEC(fetchWord());
+				ACTION_ABSOLUTE(DEC);
 				break;
 			case 0b101:
-				DUMP_BYTE(PC);
-				DUMP_PREFIX(DEC);
-				DEC(FETCH_ADDR_ZEROPAGEX);
+				ACTION_ZEROPAGEX(DEC);
 				break;
 			case 0b111:
-				DUMP_DBYTE(PC);
-				DUMP_PREFIX(DEC);
-				DEC(FETCH_ADDR_ABSOLUTEX);
+				ACTION_ABSOLUTEX(DEC);
 				break;
 
 			case 0b010:	// DEX
-				DUMP_PREFIX(DEX);
-				DEX();
+				ACTION_IMPLIED(DEX);
 				break;
 
 			default:
@@ -1422,24 +1413,16 @@ void mos6502::step()
 		case 0b111:	//	INC
 			switch (addressing_mode) {
 			case 0b001:
-				DUMP_BYTE(PC);
-				DUMP_PREFIX(INC);
-				INC(fetchByte());
+				ACTION_ZP(INC);
 				break;
 			case 0b011:
-				DUMP_DBYTE(PC);
-				DUMP_PREFIX(INC);
-				INC(fetchWord());
+				ACTION_ABSOLUTE(INC);
 				break;
 			case 0b101:
-				DUMP_BYTE(PC);
-				DUMP_PREFIX(INC);
-				INC(FETCH_ADDR_ZEROPAGEX);
+				ACTION_ZEROPAGEX(INC);
 				break;
 			case 0b111:
-				DUMP_DBYTE(PC);
-				DUMP_PREFIX(INC);
-				INC(FETCH_ADDR_ABSOLUTEX);
+				ACTION_ABSOLUTEX(INC);
 				break;
 			default:
 				assert(false && "unknown INC addressing mode");

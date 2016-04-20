@@ -62,6 +62,10 @@
 		ACTION(zp); \
 	}
 
+#define ACTION_IMPLIED(ACTION) \
+	DUMP_PREFIX(ACTION); \
+	ACTION();
+
 #define ACTION_A(ACTION) \
 	DUMP_PREFIX(ACTION); \
 	DUMP_A; \
