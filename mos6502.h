@@ -4,21 +4,43 @@
 #include <map>
 
 #ifdef _DEBUG
-#	define DUMP_PREFIX(x)	printf("	" #x " ")
-#else
-#	define DUMP_PREFIX(x)
-#endif
 
-#ifdef _DEBUG
-#	define DUMP_BYTEVALUE(x)	printf("%02x", x)
-#	define DUMP_BYTE(x)			DUMP_BYTEVALUE(getByte(x))
-#	define DUMP_DBYTE(x)		DUMP_BYTE(x), DUMP_BYTE(x + 1);
+#	define DUMP_PREFIX(x)			printf("	" #x " ")
+
+#	define DUMP_IMMEDIATE(x)		printf("#%02x", x)
+#	define DUMP_ABSOLUTE(x)			printf("$%04x", x)
+#	define DUMP_ZEROPAGE(x)			printf("$%02x", x)
+#	define DUMP_ZEROPAGEX(x)		printf("$%02x,X", x)
+#	define DUMP_ZEROPAGEY(x)		printf("$%02x,Y", x)
+#	define DUMP_ABSOLUTEX(x)		printf("$%04x,X", x)
+#	define DUMP_ABSOLUTEY(x)		printf("$%04x,Y", x)
+#	define DUMP_INDEXEDINDIRECTX(x)	printf("($%02x,X)", x);
+#	define DUMP_INDIRECTINDEXEDY(x)	printf("($%02x),Y", x);
+
+
+#	define DUMP_BYTEVALUE(x)		printf("%02x", x)
+#	define DUMP_BYTE(x)				DUMP_BYTEVALUE(getByte(x))
+#	define DUMP_DBYTE(x)			DUMP_BYTE(x), DUMP_BYTE(x + 1);
+
 #else
+
+#	define DUMP_PREFIX(x)
+
+#	define DUMP_IMMEDIATE(x)
+#	define DUMP_ABSOLUTE(x)
+#	define DUMP_ZEROPAGE(x)
+#	define DUMP_ZEROPAGEX(x)
+#	define DUMP_ZEROPAGEY(x)
+#	define DUMP_ABSOLUTEX(x)
+#	define DUMP_ABSOLUTEY(x)
+#	define DUMP_INDEXEDINDIRECTX(x)
+#	define DUMP_INDIRECTINDEXEDY(x)
+
 #	define DUMP_BYTEVALUE(x)
 #	define DUMP_BYTE(x)
 #	define DUMP_DBYTE(x)
-#endif
 
+#endif
 
 #define FIRST_PAGE 0x100
 
@@ -193,8 +215,6 @@ private:
 		auto high = popByte();
 		return makeWord(low, high);
 	}
-
-	//
 
 #ifdef _DEBUG
 	std::map<uint8_t, int> instructionCounts;

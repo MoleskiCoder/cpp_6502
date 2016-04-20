@@ -88,90 +88,70 @@ uint16_t mos6502::fetchWord_Indirect()
 uint8_t mos6502::readByte_Immediate()
 {
 	auto value = fetchByte();
-#ifdef _DEBUG
-	printf("#%02x", value);
-#endif
+	DUMP_IMMEDIATE(value);
 	return value;
 }
 
 uint8_t mos6502::readByte_ZeroPage()
 {
 	auto value = fetchByte();
-#ifdef _DEBUG
-	printf("$%02x", value);
-#endif
+	DUMP_ZEROPAGE(value);
 	return memory[value];
 }
 
 int8_t mos6502::readByte_ImmediateDisplacement()
 {
 	auto displacment = (int8_t)fetchByte();
-#ifdef _DEBUG
-	printf("$%04x", PC + displacment);
-#endif
+	DUMP_ABSOLUTE(PC + displacment);
 	return displacment;
 }
 
 uint8_t mos6502::readByte_ZeroPageX()
 {
 	auto zp = fetchByte();
-#ifdef _DEBUG
-	printf("$%02x,X", zp);
-#endif
+	DUMP_ZEROPAGEX(zp);
 	return memory[lowByte(zp + X)];
 }
 
 uint8_t mos6502::readByte_ZeroPageY()
 {
 	auto zp = fetchByte();
-#ifdef _DEBUG
-	printf("%02x,Y", zp);
-#endif
+	DUMP_ZEROPAGEY(zp);
 	return memory[lowByte(zp + Y)];
 }
 
 uint8_t mos6502::readByte_AbsoluteX()
 {
 	auto base = fetchWord();
-#ifdef _DEBUG
-	printf("$%04x,X", base);
-#endif
+	DUMP_ABSOLUTEX(base);
 	return memory[base + X];
 }
 
 uint8_t mos6502::readByte_AbsoluteY()
 {
 	auto base = fetchWord();
-#ifdef _DEBUG
-	printf("$%04x,Y", base);
-#endif
+	DUMP_ABSOLUTEY(base);
 	return memory[base + Y];
 }
 
 uint8_t mos6502::readByte_Absolute()
 {
 	auto address = fetchWord();
-#ifdef _DEBUG
-	printf("$%04x", address);
-#endif
+	DUMP_ABSOLUTE(address);
 	return memory[address];
 }
 
 uint8_t mos6502::readByte_IndexedIndirectX()
 {
 	auto zp = fetchByte();
-#ifdef _DEBUG
-	printf("($%02x,X)", zp);
-#endif
+	DUMP_INDEXEDINDIRECTX(zp);
 	return memory[getWord(zp + X)];
 }
 
 uint8_t mos6502::readByte_IndirectIndexedY()
 {
 	auto zp = fetchByte();
-#ifdef _DEBUG
-	printf("($%02x),Y", zp);
-#endif
+	DUMP_INDIRECTINDEXEDY(zp);
 	return memory[getWord(zp) + Y];
 }
 
@@ -180,72 +160,56 @@ uint8_t mos6502::readByte_IndirectIndexedY()
 void mos6502::writeByte_ZeroPage(uint8_t value)
 {
 	auto zp = fetchByte();
-#ifdef _DEBUG
-	printf("$%02x", zp);
-#endif
+	DUMP_ZEROPAGE(zp);
 	memory[zp] = value;
 }
 
 void mos6502::writeByte_Absolute(uint8_t value)
 {
 	auto address = fetchWord();
-#ifdef _DEBUG
-	printf("$%04x", address);
-#endif
+	DUMP_ABSOLUTE(address);
 	memory[address] = value;
 }
 
 void mos6502::writeByte_IndexedIndirectX(uint8_t value)
 {
 	auto zp = fetchByte();
-#ifdef _DEBUG
-	printf("($%02x,X)", zp);
-#endif
+	DUMP_INDEXEDINDIRECTX(zp);
 	memory[getWord(lowByte(zp + X))] = value;
 }
 
 void mos6502::writeByte_IndirectIndexedY(uint8_t value)
 {
 	auto zp = fetchByte();
-#ifdef _DEBUG
-	printf("($%02x),Y", zp);
-#endif
+	DUMP_INDIRECTINDEXEDY(zp);
 	memory[getWord(zp) + Y] = value;
 }
 
 void mos6502::writeByte_ZeroPageX(uint8_t value)
 {
 	auto zp = fetchByte();
-#ifdef _DEBUG
-	printf("$%02x,X", zp);
-#endif
+	DUMP_ZEROPAGEX(zp);
 	memory[lowByte(zp + X)] = value;
 }
 
 void mos6502::writeByte_ZeroPageY(uint8_t value)
 {
 	auto zp = fetchByte();
-#ifdef _DEBUG
-	printf("$%02x,Y", zp);
-#endif
+	DUMP_ZEROPAGEY(zp);
 	memory[lowByte(zp + Y)] = value;
 }
 
 void mos6502::writeByte_AbsoluteX(uint8_t value)
 {
 	auto base = fetchWord();
-#ifdef _DEBUG
-	printf("$%04x,X", base);
-#endif
+	DUMP_ABSOLUTEX(base);
 	memory[(uint16_t)(base + X)] = value;
 }
 
 void mos6502::writeByte_AbsoluteY(uint8_t value)
 {
 	auto base = fetchWord();
-#ifdef _DEBUG
-	printf("$%04x,Y", base);
-#endif
+	DUMP_ABSOLUTEY(base);
 	memory[(uint16_t)(base + Y)] = value;
 }
 
