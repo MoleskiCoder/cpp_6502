@@ -507,10 +507,64 @@ uint8_t mos6502::ROL(uint8_t data)
 	return result;
 }
 
+uint8_t mos6502::LSR(uint8_t data)
+{
+	P &= ~(F_N | F_Z | F_C);
+
+	if (data & 1)
+		P |= F_C;
+
+	uint8_t result = data >> 1;
+
+	if (!result)
+		P |= F_Z;
+
+	return result;
+}
+
+uint8_t mos6502::ROR(uint8_t data)
+{
+	bool carry = P & F_C;
+	P &= ~(F_N | F_Z | F_C);
+
+	if (data & 1)
+		P |= F_C;
+
+	uint8_t result = data >> 1;
+	if (carry)
+		result |= 0x80;
+
+	if (!result)
+		P |= F_Z;
+	else
+		if ((int8_t)result < 0)
+			P |= F_N;
+
+	return result;
+}
+
+void mos6502::ASL(uint16_t offset)
+{
+	auto contents = memory[offset];
+	memory[offset] = ASL(contents);
+}
+
 void mos6502::ROL(uint16_t offset)
 {
 	auto contents = memory[offset];
 	memory[offset] = ROL(contents);
+}
+
+void mos6502::LSR(uint16_t offset)
+{
+	auto contents = memory[offset];
+	memory[offset] = LSR(contents);
+}
+
+void mos6502::ROR(uint16_t offset)
+{
+	auto contents = memory[offset];
+	memory[offset] = ROR(contents);
 }
 
 void mos6502::CLC()
@@ -1186,9 +1240,25 @@ void mos6502::step()
 		case 0b000:	//	ASL
 			switch (addressing_mode)
 			{
+			case 0b001:	// ASL zp
+				DUMP_PREFIX(ASL);
+				ASL(fetchByte());
+				break;
 			case 0b010:	// ASL A
 				DUMP_PREFIX(ASL);
 				A = ASL(A);
+				break;
+			case 0b011:	// ASL absolute
+				DUMP_PREFIX(ASL);
+				ASL(fetchWord());
+				break;
+			case 0b101:	// ASL zp,X
+				DUMP_PREFIX(ASL);
+				ASL(FETCH_ADDR_ZEROPAGEX);
+				break;
+			case 0b111:	// ASL absolute,X
+				DUMP_PREFIX(ASL);
+				ASL(FETCH_ADDR_ABSOLUTEX);
 				break;
 			default:
 				assert(false && "unknown ASL addressing mode");
@@ -1198,11 +1268,26 @@ void mos6502::step()
 		case 0b001:	//	ROL
 			switch (addressing_mode)
 			{
+			case 0b001:	// ROL ZP
+				DUMP_BYTE(PC);
+				DUMP_PREFIX(ROL);
+				ROL(fetchByte());
+				break;
 			case 0b010:	// ROL A
 				DUMP_PREFIX(ROL);
 				A = ROL(A);
 				break;
-			case 0b111: // ROL abs,X
+			case 0b011:	// ROL absolute
+				DUMP_DBYTE(PC);
+				DUMP_PREFIX(ROL);
+				ROL(fetchWord());
+				break;
+			case 0b101:	// ROL zp,x
+				DUMP_BYTE(PC);
+				DUMP_PREFIX(ROL);
+				ROL(FETCH_ADDR_ZEROPAGEX);
+				break;
+			case 0b111:	// ROL absolute,x
 				DUMP_DBYTE(PC);
 				DUMP_PREFIX(ROL);
 				ROL(FETCH_ADDR_ABSOLUTEX);
@@ -1214,13 +1299,63 @@ void mos6502::step()
 			break;
 
 		case 0b010:	//	LSR
-			DUMP_PREFIX(LSR);
-			assert(false && "LSR not implemented");
+			switch (addressing_mode)
+			{
+			case 0b001:	// LSR ZP
+				DUMP_BYTE(PC);
+				DUMP_PREFIX(LSR);
+				LSR(fetchByte());
+				break;
+			case 0b010:	// LSR A
+				DUMP_PREFIX(LSR);
+				A = LSR(A);
+				break;
+			case 0b011:	// LSR absolute
+				DUMP_DBYTE(PC);
+				DUMP_PREFIX(LSR);
+				LSR(fetchWord());
+				break;
+			case 0b101:	// LSR zp,x
+				DUMP_BYTE(PC);
+				DUMP_PREFIX(LSR);
+				LSR(FETCH_ADDR_ZEROPAGEX);
+				break;
+			case 0b111:	// LSR absolute,x
+				DUMP_DBYTE(PC);
+				DUMP_PREFIX(LSR);
+				LSR(FETCH_ADDR_ABSOLUTEX);
+				break;
+			}
 			break;
 
 		case 0b011:	//	ROR
-			DUMP_PREFIX(ROR);
-			assert(false && "ROR not implemented");
+			switch (addressing_mode)
+			{
+			case 0b001:	// ROR ZP
+				DUMP_BYTE(PC);
+				DUMP_PREFIX(ROR);
+				ROR(fetchByte());
+				break;
+			case 0b010:	// ROR A
+				DUMP_PREFIX(ROR);
+				A = ROR(A);
+				break;
+			case 0b011:	// ROR absolute
+				DUMP_DBYTE(PC);
+				DUMP_PREFIX(ROR);
+				ROR(fetchWord());
+				break;
+			case 0b101:	// ROR zp,x
+				DUMP_BYTE(PC);
+				DUMP_PREFIX(ROR);
+				ROR(FETCH_ADDR_ZEROPAGEX);
+				break;
+			case 0b111:	// ROR absolute,x
+				DUMP_DBYTE(PC);
+				DUMP_PREFIX(ROR);
+				ROR(FETCH_ADDR_ABSOLUTEX);
+				break;
+			}
 			break;
 
 		case 0b100:	//	STX

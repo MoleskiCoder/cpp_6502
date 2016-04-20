@@ -119,11 +119,16 @@ private:
 	void INY();
 	void CLC();
 	void TAY();
+	void ASL(uint16_t offset);
 	void ROL(uint16_t offset);
+	void LSR(uint16_t offset);
+	void ROR(uint16_t offset);
 	void BRK();
 
 	uint8_t ASL(uint8_t data);
 	uint8_t ROL(uint8_t data);
+	uint8_t LSR(uint8_t data);
+	uint8_t ROR(uint8_t data);
 
 	// get/set memory
 
