@@ -16,7 +16,7 @@
 #	define DUMP_ABSOLUTEY(x)		printf("$%04x,Y", x)
 #	define DUMP_INDEXEDINDIRECTX(x)	printf("($%02x,X)", x);
 #	define DUMP_INDIRECTINDEXEDY(x)	printf("($%02x),Y", x);
-
+#	define DUMP_INDIRECT(x)			printf("($%04x)", x);
 
 #	define DUMP_BYTEVALUE(x)		printf("%02x", x)
 #	define DUMP_BYTE(x)				DUMP_BYTEVALUE(getByte(x))

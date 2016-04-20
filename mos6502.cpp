@@ -435,9 +435,7 @@ void mos6502::INY()
 void mos6502::JSR()
 {
 	auto destination = fetchWord();
-#ifdef _DEBUG
-	printf("$%04x", destination);
-#endif
+	DUMP_ABSOLUTE(destination);
 	pushWord(PC + 1);
 	PC = destination;
 }
@@ -639,9 +637,7 @@ void mos6502::step()
 				DUMP_PREFIX(JMP);
 				{
 					auto address = fetchWord();
-#ifdef _DEBUG
-					printf("($%04x)", address);
-#endif
+					DUMP_INDIRECT(address);
 					PC = getWord(memory[address]);
 				}
 				break;
