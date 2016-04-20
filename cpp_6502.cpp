@@ -10,9 +10,15 @@ int main() {
 	mos6502 processor;
 
 	processor.clearMemory();
-	processor.readRom("C:\\github\\cpp\\cpp_6502\\ehbasic.bin", 0xc000);
 	processor.resetRegisters();
-	processor.run(0xc000);
+
+	processor.PC = 0x4000;
+	processor.readRom("C:\\github\\cpp\\cpp_6502\\AllSuiteA.bin", 0x4000);
+
+	//processor.PC = 0xc000;
+	//processor.readRom("C:\\github\\cpp\\cpp_6502\\ehbasic.bin", 0xc000);
+
+	processor.run();
 
 	return 0;
 }

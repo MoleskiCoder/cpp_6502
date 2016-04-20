@@ -87,7 +87,7 @@ uint16_t mos6502::fetchWord_Indirect()
 
 uint8_t mos6502::readByteArgument_Immediate()
 {
-	auto value = readByte_Immediate();
+	auto value = fetchByte();
 #ifdef _DEBUG
 	printf("#%02x", value);
 #endif
@@ -96,16 +96,16 @@ uint8_t mos6502::readByteArgument_Immediate()
 
 uint8_t mos6502::readByteArgument_ZeroPage()
 {
-	auto value = readByte_Immediate();
+	auto value = fetchByte();
 #ifdef _DEBUG
 	printf("$%02x", value);
 #endif
-	return value;
+	return memory[value];
 }
 
 int8_t mos6502::readByteArgument_ImmediateDisplacement()
 {
-	auto displacment = (int8_t)readByte_Immediate();
+	auto displacment = (int8_t)fetchByte();
 #ifdef _DEBUG
 	printf("$%04x", PC + displacment);
 #endif
@@ -132,7 +132,7 @@ uint8_t mos6502::readByteArgument_ZeroPageY()
 
 uint8_t mos6502::readByteArgument_AbsoluteX()
 {
-	auto base = FETCH_ADDR_ABSOLUTE;
+	auto base = fetchWord();
 #ifdef _DEBUG
 	printf("$%04x,X", base);
 #endif
@@ -141,7 +141,7 @@ uint8_t mos6502::readByteArgument_AbsoluteX()
 
 uint8_t mos6502::readByteArgument_AbsoluteY()
 {
-	auto base = FETCH_ADDR_ABSOLUTE;
+	auto base = fetchWord();
 #ifdef _DEBUG
 	printf("$%04x,Y", base);
 #endif
@@ -150,7 +150,7 @@ uint8_t mos6502::readByteArgument_AbsoluteY()
 
 uint8_t mos6502::readByteArgument_Absolute()
 {
-	auto address = FETCH_ADDR_ABSOLUTE;
+	auto address = fetchWord();
 #ifdef _DEBUG
 	printf("$%04x", address);
 #endif
@@ -176,11 +176,6 @@ uint8_t mos6502::readByteArgument_IndirectIndexedY()
 }
 
 //
-
-uint8_t mos6502::readByte_Immediate()
-{
-	return fetchByte();
-}
 
 uint8_t mos6502::readByte_ZeroPage()
 {
@@ -612,834 +607,841 @@ void mos6502::BRK()
 
 //
 
-void mos6502::run(uint16_t offset) {
+void mos6502::step()
+{
+#ifdef _DEBUG
+	printf("\n");
+	printf("PC=%04x:", PC);
+	printf("P=%02x, A=%02x, X=%02x, Y=%02x, S=%02x	", P, A, X, Y, S);
+#endif
+
+	auto current = fetchByte();
+
+#ifdef _DEBUG
+	printf("%02x", current);
+#endif
+
+#ifdef _DEBUG
+	instructionCounts[current]++;
+#endif
 
 	auto class_mask = 0b11;
 	auto addressing_mode_mask = 0b11100;
 	auto op_code_mask = 0b11100000;
 
-	PC = offset;
+	auto classification = current & class_mask;
+	auto addressing_mode = (current & addressing_mode_mask) >> 2;
+	auto op_code = (current & op_code_mask) >> 5;
 
-	for (;;)
+	switch (classification)
 	{
-#ifdef _DEBUG
-		printf("\n");
-		printf("PC=%04x:", PC);
-		printf("P=%02x, A=%02x, X=%02x, Y=%02x, S=%02x	", P, A, X, Y, S);
-#endif
+	case 0b00:
 
-		auto current = fetchByte();
+		switch (op_code) {
 
-#ifdef _DEBUG
-		printf("%02x", current);
-#endif
+		case 0b000:	// BPL
+			switch (addressing_mode) {
 
-#ifdef _DEBUG
-		instructionCounts[current]++;
-#endif
-
-		auto classification = current & class_mask;
-		auto addressing_mode = (current & addressing_mode_mask) >> 2;
-		auto op_code = (current & op_code_mask) >> 5;
-
-		switch (classification)
-		{
-		case 0b00:
-			/*
-			000	#immediate
-			001	zero page
-			011	absolute
-			101	zero page,X
-			111	absolute,X
-			*/
-			switch (op_code) {
-
-			case 0b000:	// BPL
-				switch (addressing_mode) {
-
-				case 0b00:
-					DISS_PREFIX(BRK);
-					BRK();
-					break;
-
-				case 0b100:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(BPL);
-					BPL(readByteArgument_ImmediateDisplacement());
-					break;
-
-				case 0b110:	 // CLC
-					DISS_PREFIX(CLC);
-					CLC();
-					break;
-
-				default:
-					assert(false && "unknown BPL/CLC addressing mode");
-				}
+			case 0b00:
+				DISS_PREFIX(BRK);
+				BRK();
 				break;
 
-			case 0b001:	//	BIT
-				switch (addressing_mode) {
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(BIT);
-					BIT(readByteArgument_ZeroPage());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(BIT);
-					BIT(readByteArgument_Absolute());
-					break;
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(BPL);
+				BPL(readByteArgument_ImmediateDisplacement());
+				break;
 
-				case 0b000: // JSR
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(JSR);
-					JSR();
-					break;
+			case 0b110:	 // CLC
+				DISS_PREFIX(CLC);
+				CLC();
+				break;
 
-				default:
-					assert(false && "unknown BIT/JSR addressing mode");
+			default:
+				assert(false && "unknown BPL/CLC addressing mode");
+			}
+			break;
+
+		case 0b001:	//	BIT
+			switch (addressing_mode) {
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(BIT);
+				BIT(readByteArgument_ZeroPage());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(BIT);
+				BIT(readByteArgument_Absolute());
+				break;
+
+			case 0b000: // JSR
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(JSR);
+				JSR();
+				break;
+
+			default:
+				assert(false && "unknown BIT/JSR addressing mode");
+			}
+			break;
+
+		case 0b010:
+			switch (addressing_mode)
+			{
+			case 0b010: // PHA
+				DISS_PREFIX(PHA);
+				PHA();
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(JMP);
+				PC = fetchWord();
+				break;
+			default:
+				assert(false && "unknown PHA/JMP instruction");
+			}
+			break;
+
+		case 0b011:
+			switch (addressing_mode)
+			{
+			case 0b000: // RTS
+				DISS_PREFIX(RTS);
+				RTS();
+				break;
+			case 0b010:	// PLA
+				DISS_PREFIX(PLA);
+				PLA();
+				break;
+			case 0b011: // JMP (indirect)
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(JMP);
+				{
+					auto address = fetchWord();
+#ifdef _DEBUG
+					printf("($%04x)", address);
+#endif
+					PC = getWord(memory[address]);
 				}
+				break;
+			default:
+				assert(false && "unknown RTS/PLA/JMP addressing_mode");
+			}
+			break;
+
+		case 0b100:	//	DEY
+			switch (addressing_mode)
+			{
+			case 0b010:	// Implied DEY
+				DISS_PREFIX(DEY);
+				DEY();
+				break;
+
+			case 0b100: // BCC rel
+				DUMP_BYTE(PC);
+				DISS_PREFIX(BCC);
+				BCC(readByteArgument_ImmediateDisplacement());
+				break;
+
+			case 0b001: // STY zero page
+				DUMP_BYTE(PC);
+				DISS_PREFIX(STY);
+				writeByte_ZeroPage(Y);
+				break;
+			case 0b011: // STY absolute
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(STY);
+				writeByte_Absolute(Y);
+				break;
+			case 0b101: // STY zero page, X
+				DUMP_BYTE(PC);
+				DISS_PREFIX(STY);
+				writeByte_ZeroPageX(Y);
+				break;
+
+			case 0b110: // TAY
+				DISS_PREFIX(TAY);
+				TAY();
+				break;
+
+			default:
+				assert(false && "unknown TEY/BCC/STY addressing mode");
+			}
+			break;
+
+		case 0b101:
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDY);
+				LDY(readByteArgument_Immediate());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDY);
+				LDY(readByteArgument_ZeroPage());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(LDY);
+				LDY(readByteArgument_Absolute());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDY);
+				LDY(readByteArgument_ZeroPageX());
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(LDY);
+				LDY(readByteArgument_AbsoluteX());
+				break;
+
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(BCS);
+				BCS(readByteArgument_ImmediateDisplacement());
+				break;
+
+			default:
+				assert(false && "unknown LDY/BCS addressing mode");
+			}
+			break;
+
+		case 0b110:	//	CPY
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(CPY);
+				CPY(readByteArgument_Immediate());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(CPY);
+				CPY(readByteArgument_ZeroPage());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(CPY);
+				CPY(readByteArgument_Absolute());
+				break;
+
+			case 0b100:	// BNE
+				DUMP_BYTE(PC);
+				DISS_PREFIX(BNE);
+				BNE(readByteArgument_ImmediateDisplacement());
+				break;
+
+			case 0b010:	// INY
+				DISS_PREFIX(INY);
+				INY();
+				break;
+
+			default:
+				assert(false && "unknown CPY/BNE/INY addressing mode");
+			}
+			break;
+
+		case 0b111:	//	CPX
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(CPX);
+				CPX(readByteArgument_Immediate());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(CPX);
+				CPX(readByteArgument_ZeroPage());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(CPX);
+				CPX(readByteArgument_Absolute());
+				break;
+
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(BEQ);
+				BEQ(readByteArgument_ImmediateDisplacement());
 				break;
 
 			case 0b010:
-				switch (addressing_mode)
-				{
-				case 0b010: // PHA
-					DISS_PREFIX(PHA);
-					PHA();
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(JMP);
-					PC = fetchWord();
-					break;
-				default:
-					assert(false && "unknown PHA/JMP instruction");
-				}
-				break;
-
-			case 0b011:
-				switch (addressing_mode)
-				{
-				case 0b000: // RTS
-					DISS_PREFIX(RTS);
-					RTS();
-					break;
-				case 0b010:	// PLA
-					DISS_PREFIX(PLA);
-					PLA();
-					break;
-				case 0b011: // JMP (indirect)
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(JMP);
-					{
-						auto address = fetchWord();
-#ifdef _DEBUG
-						printf("($%04x)", address);
-#endif
-						PC = getWord(memory[address]);
-					}
-					break;
-				default:
-					assert(false && "unknown RTS/PLA/JMP addressing_mode");
-				}
-				break;
-
-			case 0b100:	//	DEY
-				switch (addressing_mode)
-				{
-				case 0b010:	// Implied DEY
-					DISS_PREFIX(DEY);
-					DEY();
-					break;
-
-				case 0b100: // BCC rel
-					DUMP_BYTE(PC);
-					DISS_PREFIX(BCC);
-					BCC(readByteArgument_ImmediateDisplacement());
-					break;
-
-				case 0b001: // STY zero page
-					DUMP_BYTE(PC);
-					DISS_PREFIX(STY);
-					writeByte_ZeroPage(Y);
-					break;
-				case 0b011: // STY absolute
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(STY);
-					writeByte_Absolute(Y);
-					break;
-				case 0b101: // STY zero page, X
-					DUMP_BYTE(PC);
-					DISS_PREFIX(STY);
-					writeByte_ZeroPageX(Y);
-					break;
-
-				case 0b110: // TAY
-					DISS_PREFIX(TAY);
-					TAY();
-					break;
-
-				default:
-					assert(false && "unknown TEY/BCC/STY addressing mode");
-				}
-				break;
-
-			case 0b101:
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDY);
-					LDY(readByteArgument_Immediate());
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDY);
-					LDY(readByteArgument_ZeroPage());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(LDY);
-					LDY(readByteArgument_Absolute());
-					break;
-				case 0b101:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDY);
-					LDY(readByteArgument_ZeroPageX());
-					break;
-				case 0b111:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(LDY);
-					LDY(readByteArgument_AbsoluteX());
-					break;
-
-				case 0b100:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(BCS);
-					BCS(readByteArgument_ImmediateDisplacement());
-					break;
-
-				default:
-					assert(false && "unknown LDY/BCS addressing mode");
-				}
-				break;
-
-			case 0b110:	//	CPY
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(CPY);
-					CPY(readByteArgument_Immediate());
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(CPY);
-					CPY(readByteArgument_ZeroPage());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(CPY);
-					CPY(readByteArgument_Absolute());
-					break;
-
-				case 0b100:	// BNE
-					DUMP_BYTE(PC);
-					DISS_PREFIX(BNE);
-					BNE(readByteArgument_ImmediateDisplacement());
-					break;
-
-				case 0b010:	// INY
-					DISS_PREFIX(INY);
-					INY();
-					break;
-
-				default:
-					assert(false && "unknown CPY/BNE/INY addressing mode");
-				}
-				break;
-
-			case 0b111:	//	CPX
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(CPX);
-					CPX(readByteArgument_Immediate());
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(CPX);
-					CPX(readByteArgument_ZeroPage());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(CPX);
-					CPX(readByteArgument_Absolute());
-					break;
-
-				case 0b100:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(BEQ);
-					BEQ(readByteArgument_ImmediateDisplacement());
-					break;
-
-				case 0b010:
-					DISS_PREFIX(INX);
-					INX();
-					break;
-
-				default:
-					assert(false && "unknown CPX/BEQ/INX addressing mode");
-				}
+				DISS_PREFIX(INX);
+				INX();
 				break;
 
 			default:
-				assert(false && "unknown opcode in 00 classification");
-			}
-			break;
-
-		case 0b01:
-
-			/*
-			000	(zero page, X)
-			001	zero page
-			010	#immediate
-			011	absolute
-			100	(zero page), Y
-			101	zero page, X
-			110	absolute, Y
-			111	absolute, X
-			*/
-
-			switch (op_code) {
-
-			case 0b000:	//	ORA
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(ORA);
-					ORA(readByteArgument_IndexedIndirectX());
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(ORA);
-					ORA(readByteArgument_ZeroPage());
-					break;
-				case 0b010:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(ORA);
-					ORA(readByteArgument_Immediate());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(ORA);
-					ORA(readByteArgument_Absolute());
-					break;
-				case 0b100:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(ORA);
-					ORA(readByteArgument_IndirectIndexedY());
-					break;
-				case 0b101:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(ORA);
-					ORA(readByteArgument_ZeroPageX());
-					break;
-				case 0b110:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(ORA);
-					ORA(readByteArgument_AbsoluteY());
-					break;
-				case 0b111:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(ORA);
-					ORA(readByteArgument_AbsoluteX());
-					break;
-				default:
-					assert(false && "unknown ORA addressing mode");
-				}
-				break;
-
-			case 0b001:	//	AND
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(AND);
-					AND(readByteArgument_IndexedIndirectX());
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(AND);
-					AND(readByteArgument_ZeroPage());
-					break;
-				case 0b010:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(AND);
-					AND(readByteArgument_Immediate());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(AND);
-					AND(readByteArgument_Absolute());
-					break;
-				case 0b100:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(AND);
-					AND(readByteArgument_IndirectIndexedY());
-					break;
-				case 0b101:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(AND);
-					AND(readByteArgument_ZeroPageX());
-					break;
-				case 0b110:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(AND);
-					AND(readByteArgument_AbsoluteY());
-					break;
-				case 0b111:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(AND);
-					AND(readByteArgument_AbsoluteX());
-					break;
-				default:
-					assert(false && "unknown AND addressing mode");
-				}
-				break;
-
-			case 0b010:	//	EOR
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(EOR);
-					EOR(readByteArgument_IndexedIndirectX());
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(EOR);
-					EOR(readByteArgument_ZeroPage());
-					break;
-				case 0b010:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(EOR);
-					EOR(readByteArgument_Immediate());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(EOR);
-					EOR(readByteArgument_Absolute());
-					break;
-				case 0b100:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(EOR);
-					EOR(readByteArgument_IndirectIndexedY());
-					break;
-				case 0b101:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(EOR);
-					EOR(readByteArgument_ZeroPageX());
-					break;
-				case 0b110:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(EOR);
-					EOR(readByteArgument_AbsoluteY());
-					break;
-				case 0b111:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(EOR);
-					EOR(readByteArgument_AbsoluteX());
-					break;
-				default:
-					assert(false && "unknown EOR addressing mode");
-				}
-				break;
-
-			case 0b011:	//	ADC
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(ADC);
-					ADC(readByteArgument_IndexedIndirectX());
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(ADC);
-					ADC(readByteArgument_ZeroPage());
-					break;
-				case 0b010:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(ADC);
-					ADC(readByteArgument_Immediate());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(ADC);
-					ADC(readByteArgument_Absolute());
-					break;
-				case 0b100:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(ADC);
-					ADC(readByteArgument_IndirectIndexedY());
-					break;
-				case 0b101:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(ADC);
-					ADC(readByteArgument_ZeroPageX());
-					break;
-				case 0b110:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(ADC);
-					EOR(readByteArgument_AbsoluteY());
-					break;
-				case 0b111:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(ADC);
-					ADC(readByteArgument_AbsoluteX());
-					break;
-				default:
-					assert(false && "unknown ADC addressing mode");
-				}
-				break;
-
-			case 0b100:	//	STA
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(STA);
-					writeByte_IndexedIndirectX(A);
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(STA);
-					writeByte_ZeroPage(A);
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(STA);
-					writeByte_Absolute(A);
-					break;
-				case 0b100:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(STA);
-					writeByte_IndirectIndexedY(A);
-					break;
-				case 0b101:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(STA);
-					writeByte_ZeroPageX(A);
-					break;
-				case 0b110:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(STA);
-					writeByte_AbsoluteY(A);
-					break;
-				case 0b111:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(STA);
-					writeByte_AbsoluteX(A);
-					break;
-				default:
-					assert(false && "unknown STA addressing mode");
-				}
-				break;
-
-			case 0b101:	//	LDA
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDA);
-					LDA(readByteArgument_IndexedIndirectX());
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDA);
-					LDA(readByteArgument_ZeroPage());
-					break;
-				case 0b010:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDA);
-					LDA(readByteArgument_Immediate());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(LDA);
-					LDA(readByteArgument_Absolute());
-					break;
-				case 0b100:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDA);
-					LDA(readByteArgument_IndirectIndexedY());
-					break;
-				case 0b101:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDA);
-					LDA(readByteArgument_ZeroPageX());
-					break;
-				case 0b110:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(LDA);
-					LDA(readByteArgument_AbsoluteY());
-					break;
-				case 0b111:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(LDA);
-					LDA(readByteArgument_AbsoluteX());
-					break;
-				default:
-					assert(false && "unknown LDA addressing mode");
-				}
-				break;
-
-			case 0b110:	//	CMP
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(CMP);
-					CMP(readByteArgument_IndexedIndirectX());
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(CMP);
-					CMP(readByteArgument_ZeroPage());
-					break;
-				case 0b010:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(CMP);
-					CMP(readByteArgument_Immediate());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(CMP);
-					CMP(readByteArgument_Absolute());
-					break;
-				case 0b100:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(CMP);
-					CMP(readByteArgument_IndirectIndexedY());
-					break;
-				case 0b101:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(CMP);
-					CMP(readByteArgument_ZeroPageX());
-					break;
-				case 0b110:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(CMP);
-					CMP(readByteArgument_AbsoluteY());
-					break;
-				case 0b111:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(CMP);
-					CMP(readByteArgument_AbsoluteX());
-					break;
-				default:
-					assert(false && "unknown CMP addressing mode");
-				}
-				break;
-
-			case 0b111:	//	SBC
-				DISS_PREFIX(SBC);
-				switch (addressing_mode) {
-				case 0b000:
-					SBC(readByteArgument_IndexedIndirectX());
-					break;
-				case 0b001:
-					SBC(readByteArgument_ZeroPage());
-					break;
-				case 0b010:
-					SBC(readByteArgument_Immediate());
-					break;
-				case 0b011:
-					SBC(readByteArgument_Absolute());
-					break;
-				case 0b100:
-					SBC(readByteArgument_IndirectIndexedY());
-					break;
-				case 0b101:
-					SBC(readByteArgument_ZeroPageX());
-					break;
-				case 0b110:
-					SBC(readByteArgument_AbsoluteY());
-					break;
-				case 0b111:
-					SBC(readByteArgument_AbsoluteX());
-					break;
-				default:
-					assert(false && "unknown SBC addressing mode");
-				}
-				break;
-
-			default:
-				assert(false && "unknown opcode in 01 classification");
-			}
-			break;
-
-
-		case 0b10:
-			/*
-			000	#immediate
-			001	zero page
-			010	accumulator
-			011	absolute
-			101	zero page,X
-			111	absolute,X
-			*/
-			switch (op_code) {
-
-			case 0b000:	//	ASL
-				DISS_PREFIX(ASL);
-				switch (addressing_mode)
-				{
-				case 0b010:	// ASL A
-					A = ASL(A);
-					break;
-				default:
-					assert(false && "unknown ASL addressing mode");
-				}
-				break;
-
-			case 0b001:	//	ROL
-				DISS_PREFIX(ROL);
-				switch (addressing_mode)
-				{
-				case 0b010:	// ROL A
-					A = ROL(A);
-					break;
-				case 0b111: // ROL abs,X
-					ROL(FETCH_ADDR_ABSOLUTEX);
-					break;
-
-				default:
-					assert(false && "unknown ROL addressing mode");
-				}
-				break;
-
-			case 0b010:	//	LSR
-				DISS_PREFIX(LSR);
-				assert(false && "LSR not implemented");
-				break;
-
-			case 0b011:	//	ROR
-				DISS_PREFIX(ROR);
-				assert(false && "ROR not implemented");
-				break;
-
-			case 0b100:	//	STX
-				switch (addressing_mode) {
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(STX);
-					writeByte_ZeroPage(X);
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(STX);
-					writeByte_Absolute(X);
-					break;
-				case 0b101:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(STX);
-					writeByte_ZeroPageY(X);
-					break;
-
-				case 0b110:	// TXS
-					DISS_PREFIX(TXS);
-					TXS();
-					break;
-
-				default:
-					assert(false && "unknown STX/TXS addressing mode");
-				}
-				break;
-
-			case 0b101:	//	LDX
-				switch (addressing_mode) {
-				case 0b000:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDX);
-					LDX(readByteArgument_Immediate());
-					break;
-				case 0b001:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDX);
-					LDX(readByteArgument_ZeroPage());
-					break;
-				case 0b011:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(LDX);
-					LDX(readByteArgument_Absolute());
-					break;
-				case 0b101:
-					DUMP_BYTE(PC);
-					DISS_PREFIX(LDX);
-					LDX(readByteArgument_ZeroPageY());
-					break;
-				case 0b111:
-					DUMP_DBYTE(PC);
-					DISS_PREFIX(LDX);
-					LDX(readByteArgument_AbsoluteY());
-					break;
-				default:
-					assert(false && "unknown LDX addressing mode");
-				}
-				break;
-
-			case 0b110:	//	DEC
-				switch (addressing_mode) {
-				case 0b001:
-					DISS_PREFIX(DEC);
-					DEC(FETCH_ADDR_ZEROPAGE);
-					break;
-				case 0b011:
-					DISS_PREFIX(DEC);
-					DEC(FETCH_ADDR_ABSOLUTE);
-					break;
-				case 0b101:
-					DISS_PREFIX(DEC);
-					DEC(FETCH_ADDR_ZEROPAGEX);
-					break;
-				case 0b111:
-					DISS_PREFIX(DEC);
-					DEC(FETCH_ADDR_ABSOLUTEX);
-					break;
-
-				case 0b010:	// DEX
-					DISS_PREFIX(DEX);
-					DEX();
-					break;
-
-				default:
-					assert(false && "unknown DEC/DEX addressing mode");
-				}
-				break;
-
-			case 0b111:	//	INC
-				DISS_PREFIX(INC);
-				switch (addressing_mode) {
-				case 0b001:
-					INC(FETCH_ADDR_ZEROPAGE);
-					break;
-				case 0b011:
-					INC(FETCH_ADDR_ABSOLUTE);
-					break;
-				case 0b101:
-					INC(FETCH_ADDR_ZEROPAGEX);
-					break;
-				case 0b111:
-					INC(FETCH_ADDR_ABSOLUTEX);
-					break;
-				default:
-					assert(false && "unknown INC addressing mode");
-				}
-				break;
-
-			default:
-				assert(false && "unknown opcode in 10 classification");
+				assert(false && "unknown CPX/BEQ/INX addressing mode");
 			}
 			break;
 
 		default:
-			assert(false && "unknown classification");
+			assert(false && "unknown opcode in 00 classification");
 		}
+		break;
+
+	case 0b01:
+
+		switch (op_code) {
+
+		case 0b000:	//	ORA
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(ORA);
+				ORA(readByteArgument_IndexedIndirectX());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(ORA);
+				ORA(readByteArgument_ZeroPage());
+				break;
+			case 0b010:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(ORA);
+				ORA(readByteArgument_Immediate());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(ORA);
+				ORA(readByteArgument_Absolute());
+				break;
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(ORA);
+				ORA(readByteArgument_IndirectIndexedY());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(ORA);
+				ORA(readByteArgument_ZeroPageX());
+				break;
+			case 0b110:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(ORA);
+				ORA(readByteArgument_AbsoluteY());
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(ORA);
+				ORA(readByteArgument_AbsoluteX());
+				break;
+			default:
+				assert(false && "unknown ORA addressing mode");
+			}
+			break;
+
+		case 0b001:	//	AND
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(AND);
+				AND(readByteArgument_IndexedIndirectX());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(AND);
+				AND(readByteArgument_ZeroPage());
+				break;
+			case 0b010:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(AND);
+				AND(readByteArgument_Immediate());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(AND);
+				AND(readByteArgument_Absolute());
+				break;
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(AND);
+				AND(readByteArgument_IndirectIndexedY());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(AND);
+				AND(readByteArgument_ZeroPageX());
+				break;
+			case 0b110:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(AND);
+				AND(readByteArgument_AbsoluteY());
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(AND);
+				AND(readByteArgument_AbsoluteX());
+				break;
+			default:
+				assert(false && "unknown AND addressing mode");
+			}
+			break;
+
+		case 0b010:	//	EOR
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(EOR);
+				EOR(readByteArgument_IndexedIndirectX());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(EOR);
+				EOR(readByteArgument_ZeroPage());
+				break;
+			case 0b010:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(EOR);
+				EOR(readByteArgument_Immediate());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(EOR);
+				EOR(readByteArgument_Absolute());
+				break;
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(EOR);
+				EOR(readByteArgument_IndirectIndexedY());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(EOR);
+				EOR(readByteArgument_ZeroPageX());
+				break;
+			case 0b110:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(EOR);
+				EOR(readByteArgument_AbsoluteY());
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(EOR);
+				EOR(readByteArgument_AbsoluteX());
+				break;
+			default:
+				assert(false && "unknown EOR addressing mode");
+			}
+			break;
+
+		case 0b011:	//	ADC
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(ADC);
+				ADC(readByteArgument_IndexedIndirectX());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(ADC);
+				ADC(readByteArgument_ZeroPage());
+				break;
+			case 0b010:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(ADC);
+				ADC(readByteArgument_Immediate());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(ADC);
+				ADC(readByteArgument_Absolute());
+				break;
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(ADC);
+				ADC(readByteArgument_IndirectIndexedY());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(ADC);
+				ADC(readByteArgument_ZeroPageX());
+				break;
+			case 0b110:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(ADC);
+				EOR(readByteArgument_AbsoluteY());
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(ADC);
+				ADC(readByteArgument_AbsoluteX());
+				break;
+			default:
+				assert(false && "unknown ADC addressing mode");
+			}
+			break;
+
+		case 0b100:	//	STA
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(STA);
+				writeByte_IndexedIndirectX(A);
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(STA);
+				writeByte_ZeroPage(A);
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(STA);
+				writeByte_Absolute(A);
+				break;
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(STA);
+				writeByte_IndirectIndexedY(A);
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(STA);
+				writeByte_ZeroPageX(A);
+				break;
+			case 0b110:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(STA);
+				writeByte_AbsoluteY(A);
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(STA);
+				writeByte_AbsoluteX(A);
+				break;
+			default:
+				assert(false && "unknown STA addressing mode");
+			}
+			break;
+
+		case 0b101:	//	LDA
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDA);
+				LDA(readByteArgument_IndexedIndirectX());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDA);
+				LDA(readByteArgument_ZeroPage());
+				break;
+			case 0b010:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDA);
+				LDA(readByteArgument_Immediate());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(LDA);
+				LDA(readByteArgument_Absolute());
+				break;
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDA);
+				LDA(readByteArgument_IndirectIndexedY());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDA);
+				LDA(readByteArgument_ZeroPageX());
+				break;
+			case 0b110:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(LDA);
+				LDA(readByteArgument_AbsoluteY());
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(LDA);
+				LDA(readByteArgument_AbsoluteX());
+				break;
+			default:
+				assert(false && "unknown LDA addressing mode");
+			}
+			break;
+
+		case 0b110:	//	CMP
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(CMP);
+				CMP(readByteArgument_IndexedIndirectX());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(CMP);
+				CMP(readByteArgument_ZeroPage());
+				break;
+			case 0b010:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(CMP);
+				CMP(readByteArgument_Immediate());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(CMP);
+				CMP(readByteArgument_Absolute());
+				break;
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(CMP);
+				CMP(readByteArgument_IndirectIndexedY());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(CMP);
+				CMP(readByteArgument_ZeroPageX());
+				break;
+			case 0b110:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(CMP);
+				CMP(readByteArgument_AbsoluteY());
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(CMP);
+				CMP(readByteArgument_AbsoluteX());
+				break;
+			default:
+				assert(false && "unknown CMP addressing mode");
+			}
+			break;
+
+		case 0b111:	//	SBC
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(SBC);
+				SBC(readByteArgument_IndexedIndirectX());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(SBC);
+				SBC(readByteArgument_ZeroPage());
+				break;
+			case 0b010:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(SBC);
+				SBC(readByteArgument_Immediate());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(SBC);
+				SBC(readByteArgument_Absolute());
+				break;
+			case 0b100:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(SBC);
+				SBC(readByteArgument_IndirectIndexedY());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(SBC);
+				SBC(readByteArgument_ZeroPageX());
+				break;
+			case 0b110:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(SBC);
+				SBC(readByteArgument_AbsoluteY());
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(SBC);
+				SBC(readByteArgument_AbsoluteX());
+				break;
+			default:
+				assert(false && "unknown SBC addressing mode");
+			}
+			break;
+
+		default:
+			assert(false && "unknown opcode in 01 classification");
+		}
+		break;
+
+
+	case 0b10:
+
+		switch (op_code) {
+
+		case 0b000:	//	ASL
+			switch (addressing_mode)
+			{
+			case 0b010:	// ASL A
+				DISS_PREFIX(ASL);
+				A = ASL(A);
+				break;
+			default:
+				assert(false && "unknown ASL addressing mode");
+			}
+			break;
+
+		case 0b001:	//	ROL
+			switch (addressing_mode)
+			{
+			case 0b010:	// ROL A
+				DISS_PREFIX(ROL);
+				A = ROL(A);
+				break;
+			case 0b111: // ROL abs,X
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(ROL);
+				ROL(FETCH_ADDR_ABSOLUTEX);
+				break;
+
+			default:
+				assert(false && "unknown ROL addressing mode");
+			}
+			break;
+
+		case 0b010:	//	LSR
+			DISS_PREFIX(LSR);
+			assert(false && "LSR not implemented");
+			break;
+
+		case 0b011:	//	ROR
+			DISS_PREFIX(ROR);
+			assert(false && "ROR not implemented");
+			break;
+
+		case 0b100:	//	STX
+			switch (addressing_mode) {
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(STX);
+				writeByte_ZeroPage(X);
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(STX);
+				writeByte_Absolute(X);
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(STX);
+				writeByte_ZeroPageY(X);
+				break;
+
+			case 0b110:	// TXS
+				DISS_PREFIX(TXS);
+				TXS();
+				break;
+
+			default:
+				assert(false && "unknown STX/TXS addressing mode");
+			}
+			break;
+
+		case 0b101:	//	LDX
+			switch (addressing_mode) {
+			case 0b000:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDX);
+				LDX(readByteArgument_Immediate());
+				break;
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDX);
+				LDX(readByteArgument_ZeroPage());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(LDX);
+				LDX(readByteArgument_Absolute());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(LDX);
+				LDX(readByteArgument_ZeroPageY());
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(LDX);
+				LDX(readByteArgument_AbsoluteY());
+				break;
+			default:
+				assert(false && "unknown LDX addressing mode");
+			}
+			break;
+
+		case 0b110:	//	DEC
+			switch (addressing_mode) {
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(DEC);
+				DEC(fetchByte());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(DEC);
+				DEC(fetchWord());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(DEC);
+				DEC(FETCH_ADDR_ZEROPAGEX);
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(DEC);
+				DEC(FETCH_ADDR_ABSOLUTEX);
+				break;
+
+			case 0b010:	// DEX
+				DISS_PREFIX(DEX);
+				DEX();
+				break;
+
+			default:
+				assert(false && "unknown DEC/DEX addressing mode");
+			}
+			break;
+
+		case 0b111:	//	INC
+			switch (addressing_mode) {
+			case 0b001:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(INC);
+				INC(fetchByte());
+				break;
+			case 0b011:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(INC);
+				INC(fetchWord());
+				break;
+			case 0b101:
+				DUMP_BYTE(PC);
+				DISS_PREFIX(INC);
+				INC(FETCH_ADDR_ZEROPAGEX);
+				break;
+			case 0b111:
+				DUMP_DBYTE(PC);
+				DISS_PREFIX(INC);
+				INC(FETCH_ADDR_ABSOLUTEX);
+				break;
+			default:
+				assert(false && "unknown INC addressing mode");
+			}
+			break;
+
+		default:
+			assert(false && "unknown opcode in 10 classification");
+		}
+		break;
+
+	default:
+		assert(false && "unknown classification");
+	}
+}
+
+void mos6502::run() {
+
+	for (;;)
+	{
+		step();
 	}
 }

@@ -20,8 +20,6 @@
 
 #define FIRST_PAGE 0x100
 
-#define FETCH_ADDR_ZEROPAGE				fetchByte()
-#define FETCH_ADDR_ABSOLUTE				fetchWord()
 #define FETCH_ADDR_INDEXEDINDIRECTX		getWord(memory[lowByte(fetchByte() + X)])
 #define FETCH_ADDR_INDIRECTINDEXEDY		getWord(memory[fetchByte()]) + Y
 #define FETCH_ADDR_ZEROPAGEX			lowByte(fetchByte() + X)
@@ -29,8 +27,8 @@
 #define FETCH_ADDR_ABSOLUTEX			(uint16_t)(fetchWord() + X)
 #define FETCH_ADDR_ABSOLUTEY			(uint16_t)(fetchWord() + Y)
 
-#define ZEROPAGE			memory[FETCH_ADDR_ZEROPAGE]
-#define ABSOLUTE			memory[FETCH_ADDR_ABSOLUTE]
+#define ZEROPAGE			memory[fetchByte()]
+#define ABSOLUTE			memory[fetchWord()]
 #define INDEXEDINDIRECTX	memory[FETCH_ADDR_INDEXEDINDIRECTX]
 #define INDIRECTINDEXEDY	memory[FETCH_ADDR_INDIRECTINDEXEDY]
 #define ZEROPAGEX			memory[FETCH_ADDR_ZEROPAGEX]
@@ -48,7 +46,30 @@ public:
 	void clearMemory();
 	void resetRegisters();
 
-	void run(uint16_t offset);
+	void run();
+	void step();
+
+	std::vector<uint8_t> memory;
+
+	uint16_t PC;	// program counter
+	uint8_t X;		// index register X
+	uint8_t Y;		// index register Y
+	uint8_t A;		// accumulator
+	uint8_t S;		// stack pointer
+
+	enum F_BITS
+	{
+		F_N = 0x80,	// Negative
+		F_V = 0x40,	// Overflow
+					// ignored
+		F_B = 0x10,	// Break
+		F_D = 0x08,	// Decimal(use BCD for arithmetics)
+		F_I = 0x04,	// Interrupt(IRQ disable)
+		F_Z = 0x02,	// Zero
+		F_C = 0x01,	// Carry
+	};
+
+	uint8_t P;		// processor status
 
 private:
 	void CMP(uint8_t first, uint8_t second);
@@ -122,7 +143,6 @@ private:
 
 	//
 
-	uint8_t readByte_Immediate();
 	uint8_t readByte_ZeroPage();
 	uint8_t readByte_Absolute();
 	uint8_t readByte_IndexedIndirectX();
@@ -193,28 +213,6 @@ private:
 	}
 
 	//
-
-	std::vector<uint8_t> memory;
-
-	uint16_t PC;	// program counter
-	uint8_t X;		// index register X
-	uint8_t Y;		// index register Y
-	uint8_t A;		// accumulator
-	uint8_t S;		// stack pointer
-
-	enum F_BITS
-	{
-		F_N = 0x80,	// Negative
-		F_V = 0x40,	// Overflow
-					// ignored
-		F_B = 0x10,	// Break
-		F_D = 0x08,	// Decimal(use BCD for arithmetics)
-		F_I = 0x04,	// Interrupt(IRQ disable)
-		F_Z = 0x02,	// Zero
-		F_C = 0x01,	// Carry
-	};
-
-	uint8_t P;		// processor status
 
 #ifdef _DEBUG
 	std::map<uint8_t, int> instructionCounts;
