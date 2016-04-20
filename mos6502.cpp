@@ -1293,9 +1293,9 @@ void mos6502::step()
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(ROL);
 				{
-					auto value = fetchByte();
-					DUMP_ZEROPAGE(value);
-					ROL(value);
+					auto zp = fetchByte();
+					DUMP_ZEROPAGE(zp);
+					ROL(zp);
 				}
 				break;
 			case 0b010:	// ROL A
@@ -1343,9 +1343,9 @@ void mos6502::step()
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(LSR);
 				{
-					auto value = fetchByte();
-					DUMP_ZEROPAGE(value);
-					LSR(value);
+					auto zp = fetchByte();
+					DUMP_ZEROPAGE(zp);
+					LSR(zp);
 				}
 				break;
 			case 0b010:	// LSR A
@@ -1375,9 +1375,9 @@ void mos6502::step()
 				DUMP_DBYTE(PC);
 				DUMP_PREFIX(LSR);
 				{
-					auto zp = fetchByte();
-					DUMP_ZEROPAGEX(zp);
-					LSR(lowByte(zp + X));
+					auto address = fetchWord();
+					DUMP_ABSOLUTEX(address);
+					LSR((uint16_t)(address + X));
 				}
 				break;
 			}
