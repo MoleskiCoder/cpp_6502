@@ -85,7 +85,7 @@ uint16_t mos6502::fetchWord_Indirect()
 
 //
 
-uint8_t mos6502::readByteArgument_Immediate()
+uint8_t mos6502::readByte_Immediate()
 {
 	auto value = fetchByte();
 #ifdef _DEBUG
@@ -94,7 +94,7 @@ uint8_t mos6502::readByteArgument_Immediate()
 	return value;
 }
 
-uint8_t mos6502::readByteArgument_ZeroPage()
+uint8_t mos6502::readByte_ZeroPage()
 {
 	auto value = fetchByte();
 #ifdef _DEBUG
@@ -103,7 +103,7 @@ uint8_t mos6502::readByteArgument_ZeroPage()
 	return memory[value];
 }
 
-int8_t mos6502::readByteArgument_ImmediateDisplacement()
+int8_t mos6502::readByte_ImmediateDisplacement()
 {
 	auto displacment = (int8_t)fetchByte();
 #ifdef _DEBUG
@@ -112,7 +112,7 @@ int8_t mos6502::readByteArgument_ImmediateDisplacement()
 	return displacment;
 }
 
-uint8_t mos6502::readByteArgument_ZeroPageX()
+uint8_t mos6502::readByte_ZeroPageX()
 {
 	auto zp = fetchByte();
 #ifdef _DEBUG
@@ -121,7 +121,7 @@ uint8_t mos6502::readByteArgument_ZeroPageX()
 	return memory[lowByte(zp + X)];
 }
 
-uint8_t mos6502::readByteArgument_ZeroPageY()
+uint8_t mos6502::readByte_ZeroPageY()
 {
 	auto zp = fetchByte();
 #ifdef _DEBUG
@@ -130,7 +130,7 @@ uint8_t mos6502::readByteArgument_ZeroPageY()
 	return memory[lowByte(zp + Y)];
 }
 
-uint8_t mos6502::readByteArgument_AbsoluteX()
+uint8_t mos6502::readByte_AbsoluteX()
 {
 	auto base = fetchWord();
 #ifdef _DEBUG
@@ -139,7 +139,7 @@ uint8_t mos6502::readByteArgument_AbsoluteX()
 	return memory[base + X];
 }
 
-uint8_t mos6502::readByteArgument_AbsoluteY()
+uint8_t mos6502::readByte_AbsoluteY()
 {
 	auto base = fetchWord();
 #ifdef _DEBUG
@@ -148,7 +148,7 @@ uint8_t mos6502::readByteArgument_AbsoluteY()
 	return memory[base + Y];
 }
 
-uint8_t mos6502::readByteArgument_Absolute()
+uint8_t mos6502::readByte_Absolute()
 {
 	auto address = fetchWord();
 #ifdef _DEBUG
@@ -157,7 +157,7 @@ uint8_t mos6502::readByteArgument_Absolute()
 	return memory[address];
 }
 
-uint8_t mos6502::readByteArgument_IndexedIndirectX()
+uint8_t mos6502::readByte_IndexedIndirectX()
 {
 	auto zp = fetchByte();
 #ifdef _DEBUG
@@ -166,55 +166,13 @@ uint8_t mos6502::readByteArgument_IndexedIndirectX()
 	return memory[getWord(zp + X)];
 }
 
-uint8_t mos6502::readByteArgument_IndirectIndexedY()
+uint8_t mos6502::readByte_IndirectIndexedY()
 {
 	auto zp = fetchByte();
 #ifdef _DEBUG
 	printf("($%02x),Y", zp);
 #endif
 	return memory[getWord(zp) + Y];
-}
-
-//
-
-uint8_t mos6502::readByte_ZeroPage()
-{
-	return ZEROPAGE;
-}
-
-uint8_t mos6502::readByte_Absolute()
-{
-	return ABSOLUTE;
-}
-
-uint8_t mos6502::readByte_IndexedIndirectX()
-{
-	return INDEXEDINDIRECTX;
-}
-
-uint8_t mos6502::readByte_IndirectIndexedY()
-{
-	return INDIRECTINDEXEDY;
-}
-
-uint8_t mos6502::readByte_ZeroPageX()
-{
-	return ZEROPAGEX;
-}
-
-uint8_t mos6502::readByte_ZeroPageY()
-{
-	return ZEROPAGEY;
-}
-
-uint8_t mos6502::readByte_AbsoluteX()
-{
-	return ABSOLUTEX;
-}
-
-uint8_t mos6502::readByte_AbsoluteY()
-{
-	return ABSOLUTEY;
 }
 
 //
@@ -650,7 +608,7 @@ void mos6502::step()
 			case 0b100:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(BPL);
-				BPL(readByteArgument_ImmediateDisplacement());
+				BPL(readByte_ImmediateDisplacement());
 				break;
 
 			case 0b110:	 // CLC
@@ -668,12 +626,12 @@ void mos6502::step()
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(BIT);
-				BIT(readByteArgument_ZeroPage());
+				BIT(readByte_ZeroPage());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(BIT);
-				BIT(readByteArgument_Absolute());
+				BIT(readByte_Absolute());
 				break;
 
 			case 0b000: // JSR
@@ -742,7 +700,7 @@ void mos6502::step()
 			case 0b100: // BCC rel
 				DUMP_BYTE(PC);
 				DISS_PREFIX(BCC);
-				BCC(readByteArgument_ImmediateDisplacement());
+				BCC(readByte_ImmediateDisplacement());
 				break;
 
 			case 0b001: // STY zero page
@@ -776,33 +734,33 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDY);
-				LDY(readByteArgument_Immediate());
+				LDY(readByte_Immediate());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDY);
-				LDY(readByteArgument_ZeroPage());
+				LDY(readByte_ZeroPage());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(LDY);
-				LDY(readByteArgument_Absolute());
+				LDY(readByte_Absolute());
 				break;
 			case 0b101:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDY);
-				LDY(readByteArgument_ZeroPageX());
+				LDY(readByte_ZeroPageX());
 				break;
 			case 0b111:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(LDY);
-				LDY(readByteArgument_AbsoluteX());
+				LDY(readByte_AbsoluteX());
 				break;
 
 			case 0b100:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(BCS);
-				BCS(readByteArgument_ImmediateDisplacement());
+				BCS(readByte_ImmediateDisplacement());
 				break;
 
 			default:
@@ -815,23 +773,23 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(CPY);
-				CPY(readByteArgument_Immediate());
+				CPY(readByte_Immediate());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(CPY);
-				CPY(readByteArgument_ZeroPage());
+				CPY(readByte_ZeroPage());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(CPY);
-				CPY(readByteArgument_Absolute());
+				CPY(readByte_Absolute());
 				break;
 
 			case 0b100:	// BNE
 				DUMP_BYTE(PC);
 				DISS_PREFIX(BNE);
-				BNE(readByteArgument_ImmediateDisplacement());
+				BNE(readByte_ImmediateDisplacement());
 				break;
 
 			case 0b010:	// INY
@@ -849,23 +807,23 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(CPX);
-				CPX(readByteArgument_Immediate());
+				CPX(readByte_Immediate());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(CPX);
-				CPX(readByteArgument_ZeroPage());
+				CPX(readByte_ZeroPage());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(CPX);
-				CPX(readByteArgument_Absolute());
+				CPX(readByte_Absolute());
 				break;
 
 			case 0b100:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(BEQ);
-				BEQ(readByteArgument_ImmediateDisplacement());
+				BEQ(readByte_ImmediateDisplacement());
 				break;
 
 			case 0b010:
@@ -892,42 +850,42 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(ORA);
-				ORA(readByteArgument_IndexedIndirectX());
+				ORA(readByte_IndexedIndirectX());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(ORA);
-				ORA(readByteArgument_ZeroPage());
+				ORA(readByte_ZeroPage());
 				break;
 			case 0b010:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(ORA);
-				ORA(readByteArgument_Immediate());
+				ORA(readByte_Immediate());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(ORA);
-				ORA(readByteArgument_Absolute());
+				ORA(readByte_Absolute());
 				break;
 			case 0b100:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(ORA);
-				ORA(readByteArgument_IndirectIndexedY());
+				ORA(readByte_IndirectIndexedY());
 				break;
 			case 0b101:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(ORA);
-				ORA(readByteArgument_ZeroPageX());
+				ORA(readByte_ZeroPageX());
 				break;
 			case 0b110:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(ORA);
-				ORA(readByteArgument_AbsoluteY());
+				ORA(readByte_AbsoluteY());
 				break;
 			case 0b111:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(ORA);
-				ORA(readByteArgument_AbsoluteX());
+				ORA(readByte_AbsoluteX());
 				break;
 			default:
 				assert(false && "unknown ORA addressing mode");
@@ -939,42 +897,42 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(AND);
-				AND(readByteArgument_IndexedIndirectX());
+				AND(readByte_IndexedIndirectX());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(AND);
-				AND(readByteArgument_ZeroPage());
+				AND(readByte_ZeroPage());
 				break;
 			case 0b010:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(AND);
-				AND(readByteArgument_Immediate());
+				AND(readByte_Immediate());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(AND);
-				AND(readByteArgument_Absolute());
+				AND(readByte_Absolute());
 				break;
 			case 0b100:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(AND);
-				AND(readByteArgument_IndirectIndexedY());
+				AND(readByte_IndirectIndexedY());
 				break;
 			case 0b101:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(AND);
-				AND(readByteArgument_ZeroPageX());
+				AND(readByte_ZeroPageX());
 				break;
 			case 0b110:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(AND);
-				AND(readByteArgument_AbsoluteY());
+				AND(readByte_AbsoluteY());
 				break;
 			case 0b111:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(AND);
-				AND(readByteArgument_AbsoluteX());
+				AND(readByte_AbsoluteX());
 				break;
 			default:
 				assert(false && "unknown AND addressing mode");
@@ -986,42 +944,42 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(EOR);
-				EOR(readByteArgument_IndexedIndirectX());
+				EOR(readByte_IndexedIndirectX());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(EOR);
-				EOR(readByteArgument_ZeroPage());
+				EOR(readByte_ZeroPage());
 				break;
 			case 0b010:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(EOR);
-				EOR(readByteArgument_Immediate());
+				EOR(readByte_Immediate());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(EOR);
-				EOR(readByteArgument_Absolute());
+				EOR(readByte_Absolute());
 				break;
 			case 0b100:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(EOR);
-				EOR(readByteArgument_IndirectIndexedY());
+				EOR(readByte_IndirectIndexedY());
 				break;
 			case 0b101:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(EOR);
-				EOR(readByteArgument_ZeroPageX());
+				EOR(readByte_ZeroPageX());
 				break;
 			case 0b110:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(EOR);
-				EOR(readByteArgument_AbsoluteY());
+				EOR(readByte_AbsoluteY());
 				break;
 			case 0b111:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(EOR);
-				EOR(readByteArgument_AbsoluteX());
+				EOR(readByte_AbsoluteX());
 				break;
 			default:
 				assert(false && "unknown EOR addressing mode");
@@ -1033,42 +991,42 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(ADC);
-				ADC(readByteArgument_IndexedIndirectX());
+				ADC(readByte_IndexedIndirectX());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(ADC);
-				ADC(readByteArgument_ZeroPage());
+				ADC(readByte_ZeroPage());
 				break;
 			case 0b010:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(ADC);
-				ADC(readByteArgument_Immediate());
+				ADC(readByte_Immediate());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(ADC);
-				ADC(readByteArgument_Absolute());
+				ADC(readByte_Absolute());
 				break;
 			case 0b100:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(ADC);
-				ADC(readByteArgument_IndirectIndexedY());
+				ADC(readByte_IndirectIndexedY());
 				break;
 			case 0b101:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(ADC);
-				ADC(readByteArgument_ZeroPageX());
+				ADC(readByte_ZeroPageX());
 				break;
 			case 0b110:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(ADC);
-				EOR(readByteArgument_AbsoluteY());
+				EOR(readByte_AbsoluteY());
 				break;
 			case 0b111:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(ADC);
-				ADC(readByteArgument_AbsoluteX());
+				ADC(readByte_AbsoluteX());
 				break;
 			default:
 				assert(false && "unknown ADC addressing mode");
@@ -1122,42 +1080,42 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDA);
-				LDA(readByteArgument_IndexedIndirectX());
+				LDA(readByte_IndexedIndirectX());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDA);
-				LDA(readByteArgument_ZeroPage());
+				LDA(readByte_ZeroPage());
 				break;
 			case 0b010:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDA);
-				LDA(readByteArgument_Immediate());
+				LDA(readByte_Immediate());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(LDA);
-				LDA(readByteArgument_Absolute());
+				LDA(readByte_Absolute());
 				break;
 			case 0b100:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDA);
-				LDA(readByteArgument_IndirectIndexedY());
+				LDA(readByte_IndirectIndexedY());
 				break;
 			case 0b101:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDA);
-				LDA(readByteArgument_ZeroPageX());
+				LDA(readByte_ZeroPageX());
 				break;
 			case 0b110:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(LDA);
-				LDA(readByteArgument_AbsoluteY());
+				LDA(readByte_AbsoluteY());
 				break;
 			case 0b111:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(LDA);
-				LDA(readByteArgument_AbsoluteX());
+				LDA(readByte_AbsoluteX());
 				break;
 			default:
 				assert(false && "unknown LDA addressing mode");
@@ -1169,42 +1127,42 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(CMP);
-				CMP(readByteArgument_IndexedIndirectX());
+				CMP(readByte_IndexedIndirectX());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(CMP);
-				CMP(readByteArgument_ZeroPage());
+				CMP(readByte_ZeroPage());
 				break;
 			case 0b010:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(CMP);
-				CMP(readByteArgument_Immediate());
+				CMP(readByte_Immediate());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(CMP);
-				CMP(readByteArgument_Absolute());
+				CMP(readByte_Absolute());
 				break;
 			case 0b100:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(CMP);
-				CMP(readByteArgument_IndirectIndexedY());
+				CMP(readByte_IndirectIndexedY());
 				break;
 			case 0b101:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(CMP);
-				CMP(readByteArgument_ZeroPageX());
+				CMP(readByte_ZeroPageX());
 				break;
 			case 0b110:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(CMP);
-				CMP(readByteArgument_AbsoluteY());
+				CMP(readByte_AbsoluteY());
 				break;
 			case 0b111:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(CMP);
-				CMP(readByteArgument_AbsoluteX());
+				CMP(readByte_AbsoluteX());
 				break;
 			default:
 				assert(false && "unknown CMP addressing mode");
@@ -1216,42 +1174,42 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(SBC);
-				SBC(readByteArgument_IndexedIndirectX());
+				SBC(readByte_IndexedIndirectX());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(SBC);
-				SBC(readByteArgument_ZeroPage());
+				SBC(readByte_ZeroPage());
 				break;
 			case 0b010:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(SBC);
-				SBC(readByteArgument_Immediate());
+				SBC(readByte_Immediate());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(SBC);
-				SBC(readByteArgument_Absolute());
+				SBC(readByte_Absolute());
 				break;
 			case 0b100:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(SBC);
-				SBC(readByteArgument_IndirectIndexedY());
+				SBC(readByte_IndirectIndexedY());
 				break;
 			case 0b101:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(SBC);
-				SBC(readByteArgument_ZeroPageX());
+				SBC(readByte_ZeroPageX());
 				break;
 			case 0b110:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(SBC);
-				SBC(readByteArgument_AbsoluteY());
+				SBC(readByte_AbsoluteY());
 				break;
 			case 0b111:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(SBC);
-				SBC(readByteArgument_AbsoluteX());
+				SBC(readByte_AbsoluteX());
 				break;
 			default:
 				assert(false && "unknown SBC addressing mode");
@@ -1341,27 +1299,27 @@ void mos6502::step()
 			case 0b000:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDX);
-				LDX(readByteArgument_Immediate());
+				LDX(readByte_Immediate());
 				break;
 			case 0b001:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDX);
-				LDX(readByteArgument_ZeroPage());
+				LDX(readByte_ZeroPage());
 				break;
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(LDX);
-				LDX(readByteArgument_Absolute());
+				LDX(readByte_Absolute());
 				break;
 			case 0b101:
 				DUMP_BYTE(PC);
 				DISS_PREFIX(LDX);
-				LDX(readByteArgument_ZeroPageY());
+				LDX(readByte_ZeroPageY());
 				break;
 			case 0b111:
 				DUMP_DBYTE(PC);
 				DISS_PREFIX(LDX);
-				LDX(readByteArgument_AbsoluteY());
+				LDX(readByte_AbsoluteY());
 				break;
 			default:
 				assert(false && "unknown LDX addressing mode");

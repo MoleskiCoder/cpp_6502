@@ -27,15 +27,6 @@
 #define FETCH_ADDR_ABSOLUTEX			(uint16_t)(fetchWord() + X)
 #define FETCH_ADDR_ABSOLUTEY			(uint16_t)(fetchWord() + Y)
 
-#define ZEROPAGE			memory[fetchByte()]
-#define ABSOLUTE			memory[fetchWord()]
-#define INDEXEDINDIRECTX	memory[FETCH_ADDR_INDEXEDINDIRECTX]
-#define INDIRECTINDEXEDY	memory[FETCH_ADDR_INDIRECTINDEXEDY]
-#define ZEROPAGEX			memory[FETCH_ADDR_ZEROPAGEX]
-#define ZEROPAGEY			memory[FETCH_ADDR_ZEROPAGEY]
-#define ABSOLUTEX			memory[FETCH_ADDR_ABSOLUTEX]
-#define ABSOLUTEY			memory[FETCH_ADDR_ABSOLUTEY]
-
 class mos6502
 {
 public:
@@ -129,20 +120,9 @@ private:
 
 	//
 
-	int8_t readByteArgument_ImmediateDisplacement();
+	int8_t readByte_ImmediateDisplacement();
 
-	uint8_t readByteArgument_Immediate();
-	uint8_t readByteArgument_ZeroPage();
-	uint8_t readByteArgument_Absolute();
-	uint8_t readByteArgument_IndexedIndirectX();
-	uint8_t readByteArgument_IndirectIndexedY();
-	uint8_t readByteArgument_ZeroPageX();
-	uint8_t readByteArgument_ZeroPageY();
-	uint8_t readByteArgument_AbsoluteX();
-	uint8_t readByteArgument_AbsoluteY();
-
-	//
-
+	uint8_t readByte_Immediate();
 	uint8_t readByte_ZeroPage();
 	uint8_t readByte_Absolute();
 	uint8_t readByte_IndexedIndirectX();
