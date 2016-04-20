@@ -53,6 +53,47 @@
 #define FETCH_ADDR_ABSOLUTEX			(uint16_t)(fetchWord() + X)
 #define FETCH_ADDR_ABSOLUTEY			(uint16_t)(fetchWord() + Y)
 
+#define ACTION_ZP(ACTION) \
+	DUMP_BYTE(PC); \
+	DUMP_PREFIX(ACTION); \
+	{ \
+		auto zp = fetchByte(); \
+		DUMP_ZEROPAGE(zp); \
+		ACTION(zp); \
+	}
+
+#define ACTION_A(ACTION) \
+	DUMP_PREFIX(ACTION); \
+	DUMP_A; \
+	A = ACTION(A);
+
+#define ACTION_ABSOLUTE(ACTION) \
+	DUMP_DBYTE(PC); \
+	DUMP_PREFIX(ACTION); \
+	{ \
+		auto address = fetchWord(); \
+		DUMP_ABSOLUTE(address); \
+		ACTION(address); \
+	}
+
+#define ACTION_ZEROPAGEX(ACTION) \
+	DUMP_BYTE(PC); \
+	DUMP_PREFIX(ACTION); \
+	{ \
+		auto zp = fetchByte(); \
+		DUMP_ZEROPAGEX(zp); \
+		ACTION(lowByte(zp + X)); \
+	}
+
+#define ACTION_ABSOLUTEX(ACTION) \
+	DUMP_DBYTE(PC); \
+	DUMP_PREFIX(ACTION); \
+	{ \
+		auto address = fetchWord(); \
+		DUMP_ABSOLUTEX(address); \
+		ACTION((uint16_t)(address + X)); \
+	}
+
 class mos6502
 {
 public:
