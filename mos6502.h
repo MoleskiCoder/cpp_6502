@@ -20,8 +20,8 @@
 
 #define FIRST_PAGE 0x100
 
-#define FETCH_ADDR_INDEXEDINDIRECTX		getWord(memory[lowByte(fetchByte() + X)])
-#define FETCH_ADDR_INDIRECTINDEXEDY		getWord(memory[fetchByte()]) + Y
+#define FETCH_ADDR_INDEXEDINDIRECTX		getWord(lowByte(fetchByte() + X))
+#define FETCH_ADDR_INDIRECTINDEXEDY		getWord(fetchByte()) + Y
 #define FETCH_ADDR_ZEROPAGEX			lowByte(fetchByte() + X)
 #define FETCH_ADDR_ZEROPAGEY			lowByte(fetchByte() + Y)
 #define FETCH_ADDR_ABSOLUTEX			(uint16_t)(fetchWord() + X)

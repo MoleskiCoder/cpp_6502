@@ -163,7 +163,7 @@ uint8_t mos6502::readByteArgument_IndexedIndirectX()
 #ifdef _DEBUG
 	printf("($%02x,X)", zp);
 #endif
-	return memory[getWord(memory[zp + X])];
+	return memory[getWord(zp + X)];
 }
 
 uint8_t mos6502::readByteArgument_IndirectIndexedY()
@@ -172,7 +172,7 @@ uint8_t mos6502::readByteArgument_IndirectIndexedY()
 #ifdef _DEBUG
 	printf("($%02x),Y", zp);
 #endif
-	return memory[getWord(memory[zp]) + Y];
+	return memory[getWord(zp) + Y];
 }
 
 //
@@ -239,11 +239,11 @@ void mos6502::writeByte_Absolute(uint8_t value)
 
 void mos6502::writeByte_IndexedIndirectX(uint8_t value)
 {
-	auto base = fetchByte();
+	auto zp = fetchByte();
 #ifdef _DEBUG
-	printf("($%02x,X)", base);
+	printf("($%02x,X)", zp);
 #endif
-	memory[getWord(memory[lowByte(base + X)])] = value;
+	memory[getWord(lowByte(zp + X))] = value;
 }
 
 void mos6502::writeByte_IndirectIndexedY(uint8_t value)
@@ -252,7 +252,7 @@ void mos6502::writeByte_IndirectIndexedY(uint8_t value)
 #ifdef _DEBUG
 	printf("($%02x),Y", zp);
 #endif
-	memory[getWord(memory[zp]) + Y] = value;
+	memory[getWord(zp) + Y] = value;
 }
 
 void mos6502::writeByte_ZeroPageX(uint8_t value)
