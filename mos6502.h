@@ -4,15 +4,17 @@
 #include <map>
 
 #ifdef _DEBUG
-#	define DISS_PREFIX(x)	printf("	" #x " ")
+#	define DUMP_PREFIX(x)	printf("	" #x " ")
 #else
-#	define DISS_PREFIX(x)
+#	define DUMP_PREFIX(x)
 #endif
 
 #ifdef _DEBUG
-#	define DUMP_BYTE(x)		printf("%02x", getByte(x))
-#	define DUMP_DBYTE(x)	DUMP_BYTE(x), DUMP_BYTE(x + 1);
+#	define DUMP_BYTEVALUE(x)	printf("%02x", x)
+#	define DUMP_BYTE(x)			DUMP_BYTEVALUE(getByte(x))
+#	define DUMP_DBYTE(x)		DUMP_BYTE(x), DUMP_BYTE(x + 1);
 #else
+#	define DUMP_BYTEVALUE(x)
 #	define DUMP_BYTE(x)
 #	define DUMP_DBYTE(x)
 #endif
