@@ -101,7 +101,10 @@ private:
 	int8_t readByteArgument_ImmediateDisplacement();
 
 	uint8_t readByteArgument_Immediate();
+	uint8_t readByteArgument_ZeroPage();
 	uint8_t readByteArgument_Absolute();
+	uint8_t readByteArgument_IndexedIndirectX();
+	uint8_t readByteArgument_IndirectIndexedY();
 	uint8_t readByteArgument_ZeroPageX();
 	uint8_t readByteArgument_ZeroPageY();
 	uint8_t readByteArgument_AbsoluteX();
