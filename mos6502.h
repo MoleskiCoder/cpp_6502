@@ -7,6 +7,7 @@
 
 #	define DUMP_PREFIX(x)			printf("	" #x " ")
 
+#	define DUMP_A					printf("A")
 #	define DUMP_IMMEDIATE(x)		printf("#%02x", x)
 #	define DUMP_ABSOLUTE(x)			printf("$%04x", x)
 #	define DUMP_ZEROPAGE(x)			printf("$%02x", x)
@@ -26,6 +27,7 @@
 
 #	define DUMP_PREFIX(x)
 
+#	define DUMP_A
 #	define DUMP_IMMEDIATE(x)
 #	define DUMP_ABSOLUTE(x)
 #	define DUMP_ZEROPAGE(x)
