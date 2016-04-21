@@ -309,8 +309,9 @@ void mos6502::EOR(uint8_t data)
 
 void mos6502::ADC(uint8_t data)
 {
-	uint8_t carry = (P & F_C ? 0 : 1);
+	assert(!(P & F_D));	// BCD not implemented!!
 
+	uint8_t carry = (P & F_C ? 1 : 0);
 	uint16_t sum = A + data + carry;
 	P &= ~(F_N | F_V | F_Z | F_C);
 
@@ -342,12 +343,14 @@ void mos6502::CMP(uint8_t data)
 
 void mos6502::SBC(uint8_t data)
 {
+	assert(!(P & F_D));	// BCD not implemented!!
+
 	uint8_t carry = (P & F_C ? 0 : 1);
 	uint16_t difference = A - data - carry;
 
 	P &= ~(F_Z | F_V | F_N | F_C);
 
-	if (!((uint8_t)difference))
+	if (!(uint8_t)difference)
 		P |= F_Z;
 	else
 		if ((int8_t)difference < 0)
