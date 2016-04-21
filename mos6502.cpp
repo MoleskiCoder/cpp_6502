@@ -129,7 +129,7 @@ uint8_t mos6502::readByte_AbsoluteX()
 	auto base = fetchWord();
 	DUMP_ABSOLUTEX(base);
 	auto offset = base + X;
-	if (lowByte(offset) == 0xff)
+	if (lowByte((uint16_t)offset) == 0xff)
 		cycles += 1;
 	return memory[offset];
 }
@@ -140,7 +140,7 @@ uint8_t mos6502::readByte_AbsoluteY()
 	auto base = fetchWord();
 	DUMP_ABSOLUTEY(base);
 	auto offset = base + Y;
-	if (lowByte(offset) == 0xff)
+	if (lowByte((uint16_t)offset) == 0xff)
 		cycles += 1;
 	return memory[offset];
 }
@@ -505,7 +505,7 @@ void mos6502::PLA()
 void mos6502::PHP()
 {
 	pushByte(P);
-	cycles + 3;
+	cycles += 3;
 }
 
 void mos6502::PLP()
