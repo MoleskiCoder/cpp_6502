@@ -1085,7 +1085,7 @@ void mos6502::step()
 			case 0b110:
 				DUMP_DBYTE(PC);
 				DUMP_PREFIX(ADC);
-				EOR(readByte_AbsoluteY());
+				ADC(readByte_AbsoluteY());
 				break;
 			case 0b111:
 				DUMP_DBYTE(PC);
