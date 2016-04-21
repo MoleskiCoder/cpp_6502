@@ -113,6 +113,8 @@ public:
 
 	std::vector<uint8_t> memory;
 
+	uint64_t cycles;
+
 	uint16_t PC;	// program counter
 	uint8_t X;		// index register X
 	uint8_t Y;		// index register Y
@@ -134,6 +136,8 @@ public:
 	uint8_t P;		// processor status
 
 private:
+	void branch(int8_t displacement);
+
 	void CMP(uint8_t first, uint8_t second);
 
 	void BIT(uint8_t data);
