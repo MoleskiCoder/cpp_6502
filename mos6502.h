@@ -59,7 +59,7 @@
 	{ \
 		auto zp = fetchByte(); \
 		DUMP_ZEROPAGE(zp); \
-		ACTION(zp); \
+		ACTION((uint16_t)zp); \
 	}
 
 #define ACTION_IMPLIED(ACTION) \
@@ -86,7 +86,7 @@
 	{ \
 		auto zp = fetchByte(); \
 		DUMP_ZEROPAGEX(zp); \
-		ACTION(lowByte(zp + X)); \
+		ACTION((uint16_t)(lowByte(zp + X))); \
 	}
 
 #define ACTION_ABSOLUTEX(ACTION) \
