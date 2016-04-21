@@ -37,6 +37,7 @@
 #	define DUMP_ABSOLUTEY(x)
 #	define DUMP_INDEXEDINDIRECTX(x)
 #	define DUMP_INDIRECTINDEXEDY(x)
+#	define DUMP_INDIRECT(x)
 
 #	define DUMP_BYTEVALUE(x)
 #	define DUMP_BYTE(x)
