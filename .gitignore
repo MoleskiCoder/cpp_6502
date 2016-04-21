@@ -1,3 +1,14 @@
+.vs/
+Debug/
+x64/
+ipch/
+
+*.opendb
+*.sdf
+
+*.swp
+*~
+
 # Compiled Object files
 *.slo
 *.lo
