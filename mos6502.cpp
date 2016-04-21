@@ -372,53 +372,33 @@ void mos6502::LDX(uint8_t data)
 	reflectFlags_ZeroNegative(X);
 }
 
-void mos6502::BPL(int8_t data)
-{
-	if (!(P & F_N))
-		PC += data;
-}
+//
 
-void mos6502::BEQ(int8_t data)
-{
-	if (P & F_Z)
-		PC += data;
-}
+void mos6502::BCS(int8_t data)	{	if (P & F_C)	PC += data;	}
+void mos6502::BCC(int8_t data)	{	if (!(P & F_C))	PC += data;	}
 
-void mos6502::BNE(int8_t data)
-{
-	if (!(P & F_Z))
-		PC += data;
-}
+void mos6502::BMI(int8_t data)	{	if (P & F_N)	PC += data;	}
+void mos6502::BPL(int8_t data)	{	if (!(P & F_N))	PC += data;	}
 
-void mos6502::BCC(int8_t data)
-{
-	if (!(P & F_C))
-		PC += data;
-}
+void mos6502::BEQ(int8_t data)	{	if (P & F_Z)	PC += data;	}
+void mos6502::BNE(int8_t data)	{	if (!(P & F_Z))	PC += data;	}
 
-void mos6502::BCS(int8_t data)
-{
-	if (P & F_C)
-		PC += data;
-}
+void mos6502::BVS(int8_t data)	{	if (P & F_V)	PC += data;	}
+void mos6502::BVC(int8_t data)	{	if (!(P & F_V))	PC += data;	}
 
-void mos6502::BMI(int8_t data)
-{
-	if (P & F_N)
-		PC += data;
-}
 
-void mos6502::BVS(int8_t data)
-{
-	if (P & F_V)
-		PC += data;
-}
+void mos6502::SED() { P |= F_D;		}
+void mos6502::CLD() { P &= ~F_D;	}
 
-void mos6502::BVC(int8_t data)
-{
-	if (!(P & F_V))
-		PC += data;
-}
+void mos6502::SEI() { P |= F_I;		}
+void mos6502::CLI() { P &= ~F_I;	}
+
+void mos6502::CLV() { P &= ~F_V;	}
+
+void mos6502::SEC() { P |= F_C;		}
+void mos6502::CLC() { P &= ~F_C;	}
+
+//
 
 void mos6502::DEC(uint16_t offset)
 {
@@ -623,21 +603,6 @@ void mos6502::ROR(uint16_t offset)
 	memory[offset] = ROR(contents);
 }
 
-void mos6502::CLC()
-{
-	P &= ~F_C;
-}
-
-void mos6502::SEC()
-{
-	P |= F_C;
-}
-
-void mos6502::CLV()
-{
-	P &= ~F_V;
-}
-
 void mos6502::BRK()
 {
 	pushWord(PC + 2);
@@ -650,26 +615,6 @@ void mos6502::RTI()
 {
 	P = popByte();
 	PC = popWord();
-}
-
-void mos6502::SEI()
-{
-	P |= F_I;
-}
-
-void mos6502::CLI()
-{
-	P &= ~F_I;
-}
-
-void mos6502::SED()
-{
-	P |= F_D;
-}
-
-void mos6502::CLD()
-{
-	P &= ~F_D;
 }
 
 //
@@ -1666,6 +1611,7 @@ void mos6502::run()
 {
 	for (;;)
 	{
+		auto result = memory[0x0210];
 		step();
 	}
 }
