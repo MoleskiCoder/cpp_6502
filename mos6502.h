@@ -155,30 +155,39 @@ private:
 	void BNE(int8_t data);
 	void BCC(int8_t data);
 	void BCS(int8_t data);
+	void BMI(int8_t data);
+	void BVC(int8_t data);
+	void BVS(int8_t data);
 	void JSR();
 	void RTS();
 	void PHA();
 	void PLA();
+	void PHP();
+	void PLP();
 	void DEX();
 	void DEY();
 	void INX();
 	void INY();
 	void CLC();
-
+	void SEC();
+	void CLV();
 	void TAX();
 	void TXA();
-
 	void TAY();
 	void TYA();
-
 	void TXS();
 	void TSX();
+	void BRK();
+	void RTI();
+	void SEI();
+	void CLI();
+	void SED();
+	void CLD();
 
 	void ASL(uint16_t offset);
 	void ROL(uint16_t offset);
 	void LSR(uint16_t offset);
 	void ROR(uint16_t offset);
-	void BRK();
 
 	uint8_t ASL(uint8_t data);
 	uint8_t ROL(uint8_t data);

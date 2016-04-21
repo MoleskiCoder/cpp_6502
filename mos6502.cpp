@@ -261,16 +261,17 @@ void mos6502::CMP(uint8_t first, uint8_t second)
 
 void mos6502::BIT(uint8_t data)
 {
-	P &= ~(F_Z | F_V | F_N);
+	P &= ~(F_Z | F_V |F_N);
 
-	if (A & data)
+	uint8_t result = A & data;
+
+	if (!result)
 		P |= F_Z;
 
-	if (data & F_V)
-		P |= F_V;
-
-	if (data & F_N)
+	if (data & 0x80)
 		P |= F_N;
+	if (data & 0x40)
+		P |= F_V;
 }
 
 void mos6502::CPX(uint8_t data)
@@ -401,6 +402,24 @@ void mos6502::BCS(int8_t data)
 		PC += data;
 }
 
+void mos6502::BMI(int8_t data)
+{
+	if (P & F_N)
+		PC += data;
+}
+
+void mos6502::BVS(int8_t data)
+{
+	if (P & F_V)
+		PC += data;
+}
+
+void mos6502::BVC(int8_t data)
+{
+	if (!(P & F_V))
+		PC += data;
+}
+
 void mos6502::DEC(uint16_t offset)
 {
 	int8_t content = memory[offset];
@@ -457,6 +476,16 @@ void mos6502::PLA()
 {
 	A = popByte();
 	reflectFlags_ZeroNegative(A);
+}
+
+void mos6502::PHP()
+{
+	pushByte(P);
+}
+
+void mos6502::PLP()
+{
+	P = popByte();
 }
 
 void mos6502::TXS()
@@ -599,12 +628,48 @@ void mos6502::CLC()
 	P &= ~F_C;
 }
 
+void mos6502::SEC()
+{
+	P |= F_C;
+}
+
+void mos6502::CLV()
+{
+	P &= ~F_V;
+}
+
 void mos6502::BRK()
 {
 	pushWord(PC + 2);
 	P |= F_B;
 	pushByte(P);
 	PC = getWord(0xfffe);
+}
+
+void mos6502::RTI()
+{
+	P = popByte();
+	PC = popWord();
+}
+
+void mos6502::SEI()
+{
+	P |= F_I;
+}
+
+void mos6502::CLI()
+{
+	P &= ~F_I;
+}
+
+void mos6502::SED()
+{
+	P |= F_D;
+}
+
+void mos6502::CLD()
+{
+	P &= ~F_D;
 }
 
 //
@@ -657,6 +722,11 @@ void mos6502::step()
 				CLC();
 				break;
 
+			case 0b010:
+				DUMP_PREFIX(PHP);
+				PHP();
+				break;
+
 			default:
 				assert(false && "unknown BPL/CLC addressing mode");
 			}
@@ -682,6 +752,22 @@ void mos6502::step()
 				JSR();
 				break;
 
+			case 0b100:
+				DUMP_BYTE(PC);
+				DUMP_PREFIX(BMI);
+				BMI(readByte_ImmediateDisplacement());
+				break;
+
+			case 0b110:
+				DUMP_PREFIX(SEC);
+				SEC();
+				break;
+
+			case 0b010:
+				DUMP_PREFIX(PLP);
+				PLP();
+				break;
+
 			default:
 				assert(false && "unknown BIT/JSR addressing mode");
 			}
@@ -704,6 +790,22 @@ void mos6502::step()
 					DUMP_ABSOLUTE(address);
 					PC = address;
 				}
+				break;
+
+			case 0b100:
+				DUMP_BYTE(PC);
+				DUMP_PREFIX(BVC);
+				BVC(readByte_ImmediateDisplacement());
+				break;
+
+			case 0b000:
+				DUMP_PREFIX(RTI);
+				RTI();
+				break;
+
+			case 0b110:
+				DUMP_PREFIX(CLI);
+				CLI();
 				break;
 
 			default:
@@ -733,6 +835,17 @@ void mos6502::step()
 					DUMP_INDIRECT(address);
 					PC = getWord(address);
 				}
+				break;
+
+			case 0b100:
+				DUMP_BYTE(PC);
+				DUMP_PREFIX(BVS);
+				BVS(readByte_ImmediateDisplacement());
+				break;
+
+			case 0b110:
+				DUMP_PREFIX(SEI);
+				SEI();
 				break;
 
 			default:
@@ -821,6 +934,11 @@ void mos6502::step()
 				TAY();
 				break;
 
+			case 0b110:
+				DUMP_PREFIX(CLV);
+				CLV();
+				break;
+
 			default:
 				assert(false && "unknown LDY/BCS/TAY addressing mode");
 			}
@@ -856,6 +974,11 @@ void mos6502::step()
 				INY();
 				break;
 
+			case 0b110:
+				DUMP_PREFIX(CLD);
+				CLD();
+				break;
+
 			default:
 				assert(false && "unknown CPY/BNE/INY addressing mode");
 			}
@@ -889,6 +1012,11 @@ void mos6502::step()
 			case 0b010:
 				DUMP_PREFIX(INX);
 				INX();
+				break;
+
+			case 0b110:
+				DUMP_PREFIX(SED);
+				SED();
 				break;
 
 			default:
@@ -1515,6 +1643,11 @@ void mos6502::step()
 			case 0b111:
 				ACTION_ABSOLUTEX(INC);
 				break;
+
+			case 0b010:
+				DUMP_PREFIX(NOP);
+				break;
+
 			default:
 				assert(false && "unknown INC addressing mode");
 			}
