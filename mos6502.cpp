@@ -436,7 +436,7 @@ void mos6502::JSR()
 {
 	auto destination = fetchWord();
 	DUMP_ABSOLUTE(destination);
-	pushWord(PC);
+	pushWord(PC - 1);
 	PC = destination;
 }
 
@@ -704,7 +704,7 @@ void mos6502::step()
 				{
 					auto address = fetchWord();
 					DUMP_INDIRECT(address);
-					PC = getWord(memory[address]);
+					PC = getWord(address);
 				}
 				break;
 
