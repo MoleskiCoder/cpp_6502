@@ -436,13 +436,13 @@ void mos6502::JSR()
 {
 	auto destination = fetchWord();
 	DUMP_ABSOLUTE(destination);
-	pushWord(PC + 1);
+	pushWord(PC);
 	PC = destination;
 }
 
 void mos6502::RTS()
 {
-	PC = popWord();
+	PC = popWord() + 1;
 }
 
 void mos6502::PHA()
@@ -574,8 +574,9 @@ void mos6502::CLC()
 
 void mos6502::BRK()
 {
-	pushWord(PC);
+	pushWord(PC + 2);
 	P |= F_B;
+	pushByte(P);
 	PC = getWord(0xfffe);
 }
 
@@ -636,6 +637,7 @@ void mos6502::step()
 
 		case 0b001:	//	BIT
 			switch (addressing_mode) {
+
 			case 0b001:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(BIT);
@@ -661,15 +663,22 @@ void mos6502::step()
 		case 0b010:
 			switch (addressing_mode)
 			{
+
 			case 0b010: // PHA
 				DUMP_PREFIX(PHA);
 				PHA();
 				break;
+
 			case 0b011:
 				DUMP_DBYTE(PC);
 				DUMP_PREFIX(JMP);
-				PC = fetchWord();
+				{
+					auto address = fetchWord();
+					DUMP_ABSOLUTE(address);
+					PC = address;
+				}
 				break;
+
 			default:
 				assert(false && "unknown PHA/JMP instruction");
 			}
@@ -678,14 +687,17 @@ void mos6502::step()
 		case 0b011:
 			switch (addressing_mode)
 			{
+
 			case 0b000: // RTS
 				DUMP_PREFIX(RTS);
 				RTS();
 				break;
+
 			case 0b010:	// PLA
 				DUMP_PREFIX(PLA);
 				PLA();
 				break;
+
 			case 0b011: // JMP (indirect)
 				DUMP_DBYTE(PC);
 				DUMP_PREFIX(JMP);
@@ -695,6 +707,7 @@ void mos6502::step()
 					PC = getWord(memory[address]);
 				}
 				break;
+
 			default:
 				assert(false && "unknown RTS/PLA/JMP addressing_mode");
 			}
@@ -703,6 +716,7 @@ void mos6502::step()
 		case 0b100:	//	DEY
 			switch (addressing_mode)
 			{
+
 			case 0b010:	// Implied DEY
 				DUMP_PREFIX(DEY);
 				DEY();
@@ -742,6 +756,7 @@ void mos6502::step()
 
 		case 0b101:
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(LDY);
@@ -781,6 +796,7 @@ void mos6502::step()
 
 		case 0b110:	//	CPY
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(CPY);
@@ -815,6 +831,7 @@ void mos6502::step()
 
 		case 0b111:	//	CPX
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(CPX);
@@ -858,6 +875,7 @@ void mos6502::step()
 
 		case 0b000:	//	ORA
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(ORA);
@@ -898,6 +916,7 @@ void mos6502::step()
 				DUMP_PREFIX(ORA);
 				ORA(readByte_AbsoluteX());
 				break;
+
 			default:
 				assert(false && "unknown ORA addressing mode");
 			}
@@ -905,6 +924,7 @@ void mos6502::step()
 
 		case 0b001:	//	AND
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(AND);
@@ -945,6 +965,7 @@ void mos6502::step()
 				DUMP_PREFIX(AND);
 				AND(readByte_AbsoluteX());
 				break;
+
 			default:
 				assert(false && "unknown AND addressing mode");
 			}
@@ -952,6 +973,7 @@ void mos6502::step()
 
 		case 0b010:	//	EOR
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(EOR);
@@ -992,6 +1014,7 @@ void mos6502::step()
 				DUMP_PREFIX(EOR);
 				EOR(readByte_AbsoluteX());
 				break;
+
 			default:
 				assert(false && "unknown EOR addressing mode");
 			}
@@ -999,6 +1022,7 @@ void mos6502::step()
 
 		case 0b011:	//	ADC
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(ADC);
@@ -1039,6 +1063,7 @@ void mos6502::step()
 				DUMP_PREFIX(ADC);
 				ADC(readByte_AbsoluteX());
 				break;
+
 			default:
 				assert(false && "unknown ADC addressing mode");
 			}
@@ -1046,6 +1071,7 @@ void mos6502::step()
 
 		case 0b100:	//	STA
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(STA);
@@ -1081,12 +1107,14 @@ void mos6502::step()
 				DUMP_PREFIX(STA);
 				writeByte_AbsoluteX(A);
 				break;
+
 			default:
 				assert(false && "unknown STA addressing mode");
 			}
 			break;
 
 		case 0b101:	//	LDA
+
 			switch (addressing_mode) {
 			case 0b000:
 				DUMP_BYTE(PC);
@@ -1128,6 +1156,7 @@ void mos6502::step()
 				DUMP_PREFIX(LDA);
 				LDA(readByte_AbsoluteX());
 				break;
+
 			default:
 				assert(false && "unknown LDA addressing mode");
 			}
@@ -1135,6 +1164,7 @@ void mos6502::step()
 
 		case 0b110:	//	CMP
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(CMP);
@@ -1175,6 +1205,7 @@ void mos6502::step()
 				DUMP_PREFIX(CMP);
 				CMP(readByte_AbsoluteX());
 				break;
+
 			default:
 				assert(false && "unknown CMP addressing mode");
 			}
@@ -1182,6 +1213,7 @@ void mos6502::step()
 
 		case 0b111:	//	SBC
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(SBC);
@@ -1222,6 +1254,7 @@ void mos6502::step()
 				DUMP_PREFIX(SBC);
 				SBC(readByte_AbsoluteX());
 				break;
+
 			default:
 				assert(false && "unknown SBC addressing mode");
 			}
@@ -1240,6 +1273,7 @@ void mos6502::step()
 		case 0b000:	//	ASL
 			switch (addressing_mode)
 			{
+
 			case 0b001:	// ASL zp
 				ACTION_ZP(ASL);
 				break;
@@ -1255,6 +1289,7 @@ void mos6502::step()
 			case 0b111:	// ASL absolute,X
 				ACTION_ABSOLUTEX(ASL);
 				break;
+
 			default:
 				assert(false && "unknown ASL addressing mode");
 			}
@@ -1263,6 +1298,7 @@ void mos6502::step()
 		case 0b001:	//	ROL
 			switch (addressing_mode)
 			{
+
 			case 0b001:	// ROL ZP
 				ACTION_ZP(ROL);
 				break;
@@ -1287,6 +1323,7 @@ void mos6502::step()
 		case 0b010:	//	LSR
 			switch (addressing_mode)
 			{
+
 			case 0b001:	// LSR ZP
 				ACTION_ZP(LSR);
 				break;
@@ -1302,12 +1339,16 @@ void mos6502::step()
 			case 0b111:	// LSR absolute,x
 				ACTION_ABSOLUTEX(LSR);
 				break;
+
+			default:
+				assert(false && "unknown LSR addressing mode");
 			}
 			break;
 
 		case 0b011:	//	ROR
 			switch (addressing_mode)
 			{
+
 			case 0b001:	// ROR ZP
 				ACTION_ZP(ROR);
 				break;
@@ -1323,11 +1364,15 @@ void mos6502::step()
 			case 0b111:	// ROR absolute,x
 				ACTION_ABSOLUTEX(ROR);
 				break;
+
+			default:
+				assert(false && "unknown ROR addressing mode");
 			}
 			break;
 
 		case 0b100:	//	STX
 			switch (addressing_mode) {
+
 			case 0b001:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(STX);
@@ -1343,12 +1388,10 @@ void mos6502::step()
 				DUMP_PREFIX(STX);
 				writeByte_ZeroPageY(X);
 				break;
-
 			case 0b110:	// TXS
 				DUMP_PREFIX(TXS);
 				TXS();
 				break;
-
 			default:
 				assert(false && "unknown STX/TXS addressing mode");
 			}
@@ -1356,6 +1399,7 @@ void mos6502::step()
 
 		case 0b101:	//	LDX
 			switch (addressing_mode) {
+
 			case 0b000:
 				DUMP_BYTE(PC);
 				DUMP_PREFIX(LDX);
@@ -1381,6 +1425,7 @@ void mos6502::step()
 				DUMP_PREFIX(LDX);
 				LDX(readByte_AbsoluteY());
 				break;
+
 			default:
 				assert(false && "unknown LDX addressing mode");
 			}
@@ -1388,6 +1433,7 @@ void mos6502::step()
 
 		case 0b110:	//	DEC
 			switch (addressing_mode) {
+
 			case 0b001:
 				ACTION_ZP(DEC);
 				break;
@@ -1400,11 +1446,9 @@ void mos6502::step()
 			case 0b111:
 				ACTION_ABSOLUTEX(DEC);
 				break;
-
 			case 0b010:	// DEX
 				ACTION_IMPLIED(DEX);
 				break;
-
 			default:
 				assert(false && "unknown DEC/DEX addressing mode");
 			}
@@ -1412,6 +1456,7 @@ void mos6502::step()
 
 		case 0b111:	//	INC
 			switch (addressing_mode) {
+
 			case 0b001:
 				ACTION_ZP(INC);
 				break;
@@ -1428,7 +1473,6 @@ void mos6502::step()
 				assert(false && "unknown INC addressing mode");
 			}
 			break;
-
 		default:
 			assert(false && "unknown opcode in 10 classification");
 		}
@@ -1439,8 +1483,8 @@ void mos6502::step()
 	}
 }
 
-void mos6502::run() {
-
+void mos6502::run()
+{
 	for (;;)
 	{
 		step();
