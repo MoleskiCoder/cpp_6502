@@ -461,10 +461,34 @@ void mos6502::TXS()
 	S = X;
 }
 
+void mos6502::TSX()
+{
+	X = S;
+	reflectFlags_ZeroNegative(X);
+}
+
+void mos6502::TAX()
+{
+	X = A;
+	reflectFlags_ZeroNegative(X);
+}
+
+void mos6502::TXA()
+{
+	A = X;
+	reflectFlags_ZeroNegative(A);
+}
+
 void mos6502::TAY()
 {
 	Y = A;
 	reflectFlags_ZeroNegative(Y);
+}
+
+void mos6502::TYA()
+{
+	A = Y;
+	reflectFlags_ZeroNegative(A);
 }
 
 uint8_t mos6502::ASL(uint8_t data)
@@ -744,13 +768,13 @@ void mos6502::step()
 				writeByte_ZeroPageX(Y);
 				break;
 
-			case 0b110: // TAY
-				DUMP_PREFIX(TAY);
-				TAY();
+			case 0b110: // TYA
+				DUMP_PREFIX(TYA);
+				TYA();
 				break;
 
 			default:
-				assert(false && "unknown TEY/BCC/STY addressing mode");
+				assert(false && "unknown DEY/BCC/STY/TYA addressing mode");
 			}
 			break;
 
@@ -789,8 +813,13 @@ void mos6502::step()
 				BCS(readByte_ImmediateDisplacement());
 				break;
 
+			case 0b010: // TAY
+				DUMP_PREFIX(TAY);
+				TAY();
+				break;
+
 			default:
-				assert(false && "unknown LDY/BCS addressing mode");
+				assert(false && "unknown LDY/BCS/TAY addressing mode");
 			}
 			break;
 
@@ -1388,12 +1417,17 @@ void mos6502::step()
 				DUMP_PREFIX(STX);
 				writeByte_ZeroPageY(X);
 				break;
+
+			case 0b010:	// TXA
+				DUMP_PREFIX(TXA);
+				TXA();
+				break;
 			case 0b110:	// TXS
 				DUMP_PREFIX(TXS);
 				TXS();
 				break;
 			default:
-				assert(false && "unknown STX/TXS addressing mode");
+				assert(false && "unknown STX/TXA/TXS addressing mode");
 			}
 			break;
 
@@ -1426,8 +1460,17 @@ void mos6502::step()
 				LDX(readByte_AbsoluteY());
 				break;
 
+			case 0b010:
+				DUMP_PREFIX(TAX);
+				TAX();
+				break;
+			case 0b110:
+				DUMP_PREFIX(TSX);
+				TSX();
+				break;
+
 			default:
-				assert(false && "unknown LDX addressing mode");
+				assert(false && "unknown LDX/TAX/TSX addressing mode");
 			}
 			break;
 

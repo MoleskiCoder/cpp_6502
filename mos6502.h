@@ -161,11 +161,19 @@ private:
 	void PLA();
 	void DEX();
 	void DEY();
-	void TXS();
 	void INX();
 	void INY();
 	void CLC();
+
+	void TAX();
+	void TXA();
+
 	void TAY();
+	void TYA();
+
+	void TXS();
+	void TSX();
+
 	void ASL(uint16_t offset);
 	void ROL(uint16_t offset);
 	void LSR(uint16_t offset);
