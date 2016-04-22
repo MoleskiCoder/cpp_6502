@@ -34,8 +34,11 @@ void mos6502::clearMemory()
 
 void mos6502::resetRegisters()
 {
-	PC = 0;
-	X = Y = A = P = 0;
+	PC = 0x0000;
+	X = 0x80;
+	Y = 0x00;
+	A = 0x00;
+	P = 0x36;
 	S = 0xff;
 }
 
@@ -509,8 +512,14 @@ void mos6502::PLA()
 
 void mos6502::PHP()
 {
-	pushByte(P);
+	pushStatus();
 	cycles += 3;
+}
+
+void mos6502::pushStatus()
+{
+	P |= (F_B | F_reserved);
+	pushByte(P);
 }
 
 void mos6502::PLP()
@@ -663,8 +672,7 @@ void mos6502::ROR(uint16_t offset)
 void mos6502::BRK()
 {
 	pushWord(PC + 2);
-	P |= F_B;
-	pushByte(P);
+	pushStatus();
 	PC = getWord(0xfffe);
 	cycles += 7;
 }
@@ -1676,9 +1684,37 @@ void mos6502::step()
 
 void mos6502::run()
 {
+#ifdef TEST_SUITE2
+	uint16_t oldPC = (uint16_t)-1;
+#endif
+
 	cycles = 0;
 	for (;;)
 	{
+#ifdef TEST_SUITE1
+		if (PC == 0x45c0)
+		{
+			auto test = getByte(0x0210);
+			if (test == 0xff)
+				printf("\n** success!!");
+			else
+				printf("\n** failed!!");
+			break;
+		}
+#endif
+
+#ifdef TEST_SUITE2
+		auto test = getByte(0x0200);
+		if (oldPC == PC)
+		{
+			printf("\n** failed!!");
+			break;
+		}
+		else
+		{
+			oldPC = PC;
+		}
+#endif
 		step();
 	}
 }

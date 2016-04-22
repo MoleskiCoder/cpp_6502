@@ -13,3 +13,7 @@
 
 
 // TODO: reference additional headers your program requires here
+
+//#define TEST_SUITE1
+#define TEST_SUITE2
+//#define EHBASIC

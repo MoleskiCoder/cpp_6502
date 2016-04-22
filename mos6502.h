@@ -126,7 +126,7 @@ public:
 	{
 		F_N = 0x80,	// Negative
 		F_V = 0x40,	// Overflow
-					// ignored
+		F_reserved = 0x20, // ignored
 		F_B = 0x10,	// Break
 		F_D = 0x08,	// Decimal(use BCD for arithmetics)
 		F_I = 0x04,	// Interrupt(IRQ disable)
@@ -291,6 +291,8 @@ private:
 		auto high = popByte();
 		return makeWord(low, high);
 	}
+
+	void pushStatus();
 
 #ifdef _DEBUG
 	std::map<uint8_t, int> instructionCounts;
