@@ -269,12 +269,12 @@ private:
 
 	void pushByte(uint8_t value)
 	{
-		memory[FIRST_PAGE + --S] = value;
+		memory[FIRST_PAGE + S--] = value;
 	}
 
 	uint8_t popByte()
 	{
-		return memory[FIRST_PAGE + S++];
+		return memory[FIRST_PAGE + ++S];
 	}
 
 	void pushWord(uint16_t value)
