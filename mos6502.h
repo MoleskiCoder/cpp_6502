@@ -141,6 +141,14 @@ private:
 
 	void CMP(uint8_t first, uint8_t second);
 
+	void ADC(uint8_t data);
+	void ADC_d(uint8_t data);
+	void ADC_b(uint8_t data);
+
+	void SBC(uint8_t data);
+	void SBC_d(uint8_t data);
+	void SBC_b(uint8_t data);
+
 	void BIT(uint8_t data);
 	void CPX(uint8_t data);
 	void CPY(uint8_t data);
@@ -148,10 +156,8 @@ private:
 	void ORA(uint8_t data);
 	void AND(uint8_t data);
 	void EOR(uint8_t data);
-	void ADC(uint8_t data);
 	void LDA(uint8_t data);
 	void CMP(uint8_t data);
-	void SBC(uint8_t data);
 	void LDX(uint8_t data);
 	void BPL(int8_t data);
 	void DEC(uint16_t offset);

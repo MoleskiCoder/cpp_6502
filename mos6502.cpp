@@ -345,7 +345,15 @@ void mos6502::EOR(uint8_t data)
 
 void mos6502::ADC(uint8_t data)
 {
-	assert(!(P & F_D));	// BCD not implemented!!
+	if (P & F_D)
+		ADC_d(data);
+	else
+		ADC_b(data);
+}
+
+void mos6502::ADC_b(uint8_t data)
+{
+	assert(!(P & F_D));
 
 	uint8_t carry = (P & F_C ? 1 : 0);
 	uint16_t sum = A + data + carry;
@@ -366,6 +374,37 @@ void mos6502::ADC(uint8_t data)
 	A = (uint8_t)sum;
 }
 
+void mos6502::ADC_d(uint8_t data)
+{
+	assert(P & F_D);
+
+	uint8_t carry = P & F_C ? 1 : 0;
+
+	P &= ~(F_N | F_V | F_Z | F_C);
+
+	uint8_t low = (A & 0x0f) + (data & 0x0f) + carry;
+	if (low > 9)
+		low += 6;
+
+	uint8_t high = (A >> 4) + (data >> 4) + (low > 0x0f);
+
+	if (!uint8_t(A + data + carry))
+		P |= F_Z;
+	else
+		if (high & 8)
+			P |= F_N;
+
+	if (~(A^data) & (A ^ (high << 4)) & 0x80)
+		P |= F_V;
+
+	if (high > 9)
+		high += 6;
+	if (high > 0x0f)
+		P |= F_C;
+
+	A = (high << 4) | (low & 0x0f);
+}
+
 void mos6502::LDA(uint8_t data)
 {
 	A = data;
@@ -378,6 +417,14 @@ void mos6502::CMP(uint8_t data)
 }
 
 void mos6502::SBC(uint8_t data)
+{
+	if (P & F_D)
+		SBC_d(data);
+	else
+		SBC_b(data);
+}
+
+void mos6502::SBC_b(uint8_t data)
 {
 	assert(!(P & F_D));	// BCD not implemented!!
 
@@ -399,6 +446,40 @@ void mos6502::SBC(uint8_t data)
 		P |= F_C;
 
 	A = (uint8_t)difference;
+}
+
+void mos6502::SBC_d(uint8_t data)
+{
+	assert(P & F_D);	// BCD not implemented!!
+
+	uint8_t carry = P & F_C ? 0 : 1;
+
+	P &= ~(F_N | F_V | F_Z | F_C);
+
+	uint16_t difference = A - data - carry;
+
+	uint8_t low = (A & 0x0f) - (data & 0x0f) - carry;
+	if (int8_t(low) < 0)
+		low -= 6;
+
+	uint8_t high = (A >> 4) - (data >> 4) - (int8_t(low) < 0);
+
+	if (!uint8_t(difference))
+		P |= F_Z;
+	else
+		if (difference & 0x80)
+			P |= F_N;
+
+	if ((A ^ data) & (A ^ difference) & 0x80)
+		P |= F_V;
+
+	if (!(difference & 0xff00))
+		P |= F_C;
+
+	if (int8_t(high) < 0)
+		high -= 6;
+
+	A = (high << 4) | (low & 0x0f);
 }
 
 void mos6502::LDX(uint8_t data)
