@@ -202,6 +202,8 @@ private:
 	// get/set memory
 
 	uint8_t getByte(uint16_t offset);
+	void setByte(uint16_t offset, uint8_t value);
+
 	uint16_t getWord(uint16_t offset);
 
 	// Fetches increment their reference counter
@@ -269,12 +271,12 @@ private:
 
 	void pushByte(uint8_t value)
 	{
-		memory[FIRST_PAGE + S--] = value;
+		setByte(FIRST_PAGE + S--, value);
 	}
 
 	uint8_t popByte()
 	{
-		return memory[FIRST_PAGE + ++S];
+		return getByte(FIRST_PAGE + ++S);
 	}
 
 	void pushWord(uint16_t value)

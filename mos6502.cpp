@@ -46,10 +46,15 @@ uint8_t mos6502::getByte(uint16_t offset)
 	return memory[offset];
 }
 
+void mos6502::setByte(uint16_t offset, uint8_t value)
+{
+	memory[offset] = value;
+}
+
 uint16_t mos6502::getWord(uint16_t offset)
 {
-	auto low = memory[offset];
-	auto high = memory[offset + 1];
+	auto low = getByte(offset);
+	auto high = getByte(offset + 1);
 	return makeWord(low, high);
 }
 
@@ -95,10 +100,10 @@ uint8_t mos6502::readByte_Immediate()
 
 uint8_t mos6502::readByte_ZeroPage()
 {
-	auto value = fetchByte();
-	DUMP_ZEROPAGE(value);
+	auto zp = fetchByte();
+	DUMP_ZEROPAGE(zp);
 	cycles += 3;
-	return memory[value];
+	return getByte(zp);
 }
 
 int8_t mos6502::readByte_ImmediateDisplacement()
@@ -113,14 +118,14 @@ uint8_t mos6502::readByte_ZeroPageX()
 	auto zp = fetchByte();
 	DUMP_ZEROPAGEX(zp);
 	cycles += 4;
-	return memory[lowByte(zp + X)];
+	return getByte(lowByte(zp + X));
 }
 
 uint8_t mos6502::readByte_ZeroPageY()
 {
 	auto zp = fetchByte();
 	DUMP_ZEROPAGEY(zp);
-	return memory[lowByte(zp + Y)];
+	return getByte(lowByte(zp + Y));
 }
 
 uint8_t mos6502::readByte_AbsoluteX()
@@ -128,10 +133,10 @@ uint8_t mos6502::readByte_AbsoluteX()
 	cycles += 4;
 	auto base = fetchWord();
 	DUMP_ABSOLUTEX(base);
-	auto offset = base + X;
-	if (lowByte((uint16_t)offset) == 0xff)
+	uint16_t offset = base + X;
+	if (lowByte(offset) == 0xff)
 		cycles += 1;
-	return memory[offset];
+	return getByte(offset);
 }
 
 uint8_t mos6502::readByte_AbsoluteY()
@@ -139,10 +144,10 @@ uint8_t mos6502::readByte_AbsoluteY()
 	cycles += 4;
 	auto base = fetchWord();
 	DUMP_ABSOLUTEY(base);
-	auto offset = base + Y;
-	if (lowByte((uint16_t)offset) == 0xff)
+	uint16_t offset = base + Y;
+	if (lowByte(offset) == 0xff)
 		cycles += 1;
-	return memory[offset];
+	return getByte(offset);
 }
 
 uint8_t mos6502::readByte_Absolute()
@@ -150,7 +155,7 @@ uint8_t mos6502::readByte_Absolute()
 	auto address = fetchWord();
 	DUMP_ABSOLUTE(address);
 	cycles += 4;
-	return memory[address];
+	return getByte(address);
 }
 
 uint8_t mos6502::readByte_IndexedIndirectX()
@@ -158,7 +163,7 @@ uint8_t mos6502::readByte_IndexedIndirectX()
 	cycles += 6;
 	auto zp = fetchByte();
 	DUMP_INDEXEDINDIRECTX(zp);
-	return memory[getWord(zp + X)];
+	return getByte(getWord(zp + X));
 }
 
 uint8_t mos6502::readByte_IndirectIndexedY()
@@ -169,7 +174,7 @@ uint8_t mos6502::readByte_IndirectIndexedY()
 	auto indirection = getWord(zp);
 	if (lowByte(indirection) == 0xff)
 		cycles += 1;
-	return memory[indirection + Y];
+	return getByte(indirection + Y);
 }
 
 //
@@ -178,7 +183,7 @@ void mos6502::writeByte_ZeroPage(uint8_t value)
 {
 	auto zp = fetchByte();
 	DUMP_ZEROPAGE(zp);
-	memory[zp] = value;
+	setByte(zp, value);
 	cycles += 3;
 }
 
@@ -186,7 +191,7 @@ void mos6502::writeByte_Absolute(uint8_t value)
 {
 	auto address = fetchWord();
 	DUMP_ABSOLUTE(address);
-	memory[address] = value;
+	setByte(address, value);
 	cycles += 4;
 }
 
@@ -194,7 +199,7 @@ void mos6502::writeByte_IndexedIndirectX(uint8_t value)
 {
 	auto zp = fetchByte();
 	DUMP_INDEXEDINDIRECTX(zp);
-	memory[getWord(lowByte(zp + X))] = value;
+	setByte(getWord(lowByte(zp + X)), value);
 	cycles += 6;
 }
 
@@ -202,7 +207,7 @@ void mos6502::writeByte_IndirectIndexedY(uint8_t value)
 {
 	auto zp = fetchByte();
 	DUMP_INDIRECTINDEXEDY(zp);
-	memory[getWord(zp) + Y] = value;
+	setByte(getWord(zp) + Y, value);
 	cycles += 6;
 }
 
@@ -210,7 +215,7 @@ void mos6502::writeByte_ZeroPageX(uint8_t value)
 {
 	auto zp = fetchByte();
 	DUMP_ZEROPAGEX(zp);
-	memory[lowByte(zp + X)] = value;
+	setByte(lowByte(zp + X), value);
 	cycles += 4;
 }
 
@@ -218,7 +223,7 @@ void mos6502::writeByte_ZeroPageY(uint8_t value)
 {
 	auto zp = fetchByte();
 	DUMP_ZEROPAGEY(zp);
-	memory[lowByte(zp + Y)] = value;
+	setByte(lowByte(zp + Y), value);
 	cycles += 4;
 }
 
@@ -226,7 +231,7 @@ void mos6502::writeByte_AbsoluteX(uint8_t value)
 {
 	auto base = fetchWord();
 	DUMP_ABSOLUTEX(base);
-	memory[(uint16_t)(base + X)] = value;
+	setByte((uint16_t)(base + X), value);
 	cycles += 5;
 }
 
@@ -234,7 +239,7 @@ void mos6502::writeByte_AbsoluteY(uint8_t value)
 {
 	auto base = fetchWord();
 	DUMP_ABSOLUTEY(base);
-	memory[(uint16_t)(base + Y)] = value;
+	setByte((uint16_t)(base + Y), value);
 	cycles += 5;
 }
 
@@ -438,8 +443,8 @@ void mos6502::CLC() { cycles += 2;	P &= ~F_C;	}
 
 void mos6502::DEC(uint16_t offset)
 {
-	int8_t content = memory[offset];
-	memory[offset] = --content;
+	int8_t content = getByte(offset);
+	setByte(offset, --content);
 	reflectFlags_ZeroNegative(content);
 }
 
@@ -457,8 +462,8 @@ void mos6502::DEY()
 
 void mos6502::INC(uint16_t offset)
 {
-	int8_t content = memory[offset];
-	memory[offset] = ++content;
+	int8_t content = getByte(offset);
+	setByte(offset, ++content);
 	reflectFlags_ZeroNegative(content);
 }
 
@@ -633,26 +638,26 @@ uint8_t mos6502::ROR(uint8_t data)
 
 void mos6502::ASL(uint16_t offset)
 {
-	auto contents = memory[offset];
-	memory[offset] = ASL(contents);
+	auto contents = getByte(offset);
+	setByte(offset, ASL(contents));
 }
 
 void mos6502::ROL(uint16_t offset)
 {
-	auto contents = memory[offset];
-	memory[offset] = ROL(contents);
+	auto contents = getByte(offset);
+	setByte(offset, ROL(contents));
 }
 
 void mos6502::LSR(uint16_t offset)
 {
-	auto contents = memory[offset];
-	memory[offset] = LSR(contents);
+	auto contents = getByte(offset);
+	setByte(offset, LSR(contents));
 }
 
 void mos6502::ROR(uint16_t offset)
 {
-	auto contents = memory[offset];
-	memory[offset] = ROR(contents);
+	auto contents = getByte(offset);
+	setByte(offset, ROR(contents));
 }
 
 void mos6502::BRK()
@@ -1674,7 +1679,6 @@ void mos6502::run()
 	cycles = 0;
 	for (;;)
 	{
-		auto result = memory[0x0210];
 		step();
 	}
 }
