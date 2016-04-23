@@ -3,99 +3,35 @@
 #include <vector>
 #include <map>
 
-#ifdef _DEBUG
-
-#	define DUMP_PREFIX(x)			printf("	" #x " ")
-
-#	define DUMP_A					printf("A")
-#	define DUMP_IMMEDIATE(x)		printf("#%02x", x)
-#	define DUMP_ABSOLUTE(x)			printf("$%04x", x)
-#	define DUMP_ZEROPAGE(x)			printf("$%02x", x)
-#	define DUMP_ZEROPAGEX(x)		printf("$%02x,X", x)
-#	define DUMP_ZEROPAGEY(x)		printf("$%02x,Y", x)
-#	define DUMP_ABSOLUTEX(x)		printf("$%04x,X", x)
-#	define DUMP_ABSOLUTEY(x)		printf("$%04x,Y", x)
-#	define DUMP_INDEXEDINDIRECTX(x)	printf("($%02x,X)", x);
-#	define DUMP_INDIRECTINDEXEDY(x)	printf("($%02x),Y", x);
-#	define DUMP_INDIRECT(x)			printf("($%04x)", x);
-
-#	define DUMP_BYTEVALUE(x)		printf("%02x", x)
-#	define DUMP_BYTE(x)				DUMP_BYTEVALUE(getByte(x))
-#	define DUMP_DBYTE(x)			DUMP_BYTE(x), DUMP_BYTE(x + 1);
-
-#else
-
-#	define DUMP_PREFIX(x)
-
-#	define DUMP_A
-#	define DUMP_IMMEDIATE(x)
-#	define DUMP_ABSOLUTE(x)
-#	define DUMP_ZEROPAGE(x)
-#	define DUMP_ZEROPAGEX(x)
-#	define DUMP_ZEROPAGEY(x)
-#	define DUMP_ABSOLUTEX(x)
-#	define DUMP_ABSOLUTEY(x)
-#	define DUMP_INDEXEDINDIRECTX(x)
-#	define DUMP_INDIRECTINDEXEDY(x)
-#	define DUMP_INDIRECT(x)
-
-#	define DUMP_BYTEVALUE(x)
-#	define DUMP_BYTE(x)
-#	define DUMP_DBYTE(x)
-
-#endif
-
 #define FIRST_PAGE 0x100
 
-#define FETCH_ADDR_INDEXEDINDIRECTX		getWord(lowByte(fetchByte() + X))
-#define FETCH_ADDR_INDIRECTINDEXEDY		getWord(fetchByte()) + Y
-#define FETCH_ADDR_ZEROPAGEX			lowByte(fetchByte() + X)
-#define FETCH_ADDR_ZEROPAGEY			lowByte(fetchByte() + Y)
-#define FETCH_ADDR_ABSOLUTEX			(uint16_t)(fetchWord() + X)
-#define FETCH_ADDR_ABSOLUTEY			(uint16_t)(fetchWord() + Y)
-
 #define ACTION_ZP(ACTION) \
-	DUMP_BYTE(PC); \
-	DUMP_PREFIX(ACTION); \
 	{ \
 		auto zp = fetchByte(); \
-		DUMP_ZEROPAGE(zp); \
 		ACTION((uint16_t)zp); \
 	}
 
 #define ACTION_IMPLIED(ACTION) \
-	DUMP_PREFIX(ACTION); \
 	ACTION();
 
 #define ACTION_A(ACTION) \
-	DUMP_PREFIX(ACTION); \
-	DUMP_A; \
 	A = ACTION(A);
 
 #define ACTION_ABSOLUTE(ACTION) \
-	DUMP_DBYTE(PC); \
-	DUMP_PREFIX(ACTION); \
 	{ \
 		auto address = fetchWord(); \
-		DUMP_ABSOLUTE(address); \
 		ACTION(address); \
 	}
 
 #define ACTION_ZEROPAGEX(ACTION) \
-	DUMP_BYTE(PC); \
-	DUMP_PREFIX(ACTION); \
 	{ \
 		auto zp = fetchByte(); \
-		DUMP_ZEROPAGEX(zp); \
 		ACTION((uint16_t)(lowByte(zp + X))); \
 	}
 
 #define ACTION_ABSOLUTEX(ACTION) \
-	DUMP_DBYTE(PC); \
-	DUMP_PREFIX(ACTION); \
 	{ \
 		auto address = fetchWord(); \
-		DUMP_ABSOLUTEX(address); \
 		ACTION((uint16_t)(address + X)); \
 	}
 
