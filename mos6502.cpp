@@ -658,7 +658,7 @@ uint8_t mos6502::ASL(uint8_t data)
 	if (!result)
 		P |= F_Z;
 	else
-		if ((uint8_t)result < 0)
+		if ((int8_t)result < 0)
 			P |= F_N;
 
 	if (data & 0x80)
@@ -1789,7 +1789,7 @@ void mos6502::run()
 		auto test = getByte(0x0200);
 		if (oldPC == PC)
 		{
-			printf("\n** failed!!");
+			printf("\n** PC=%04x: test=%02x: stopped!!", PC, test);
 			break;
 		}
 		else
