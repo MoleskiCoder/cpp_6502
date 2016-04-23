@@ -752,8 +752,9 @@ void mos6502::ROR(uint16_t offset)
 
 void mos6502::BRK()
 {
-	pushWord(PC + 2);
+	pushWord(PC + 1);
 	pushStatus();
+	P |= F_I;
 	PC = getWord(0xfffe);
 	cycles += 7;
 }
