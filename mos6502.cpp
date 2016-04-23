@@ -166,7 +166,7 @@ uint8_t mos6502::readByte_IndexedIndirectX()
 	cycles += 6;
 	auto zp = fetchByte();
 	DUMP_INDEXEDINDIRECTX(zp);
-	return getByte(getWord(zp + X));
+	return getByte(getWord(lowByte(zp + X)));
 }
 
 uint8_t mos6502::readByte_IndirectIndexedY()
