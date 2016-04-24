@@ -291,6 +291,18 @@ void mos6502::BIT(uint8_t data)
 	cycles += 2;
 }
 
+void mos6502::BIT_zp()
+{
+	BIT(readByte_ZeroPage());
+	cycles++;
+}
+
+void mos6502::BIT_abs()
+{
+	BIT(readByte_Absolute());
+	cycles += 2;
+}
+
 void mos6502::CPX(uint8_t data)
 {
 	CMP(X, data);
@@ -408,7 +420,7 @@ void mos6502::SBC(uint8_t data)
 
 void mos6502::SBC_b(uint8_t data)
 {
-	assert(!(P & F_D));	// BCD not implemented!!
+	assert(!(P & F_D));
 
 	uint8_t carry = (P & F_C ? 0 : 1);
 	uint16_t difference = A - data - carry;
@@ -432,7 +444,7 @@ void mos6502::SBC_b(uint8_t data)
 
 void mos6502::SBC_d(uint8_t data)
 {
-	assert(P & F_D);	// BCD not implemented!!
+	assert(P & F_D);
 
 	uint8_t carry = P & F_C ? 0 : 1;
 
@@ -472,17 +484,38 @@ void mos6502::LDX(uint8_t data)
 
 //
 
-void mos6502::BCS(int8_t data)	{	cycles += 2;	if (P & F_C)	branch(data);	}
-void mos6502::BCC(int8_t data)	{	cycles += 2;	if (!(P & F_C))	branch(data);	}
+#define BRANCH_DEFINITION_S(ins, flag) \
+	void mos6502:: ins (int8_t displacement) \
+	{ \
+		cycles += 2; \
+		if (P & flag) \
+			branch(displacement); \
+	}
 
-void mos6502::BMI(int8_t data)	{	cycles += 2;	if (P & F_N)	branch(data);	}
-void mos6502::BPL(int8_t data)	{	cycles += 2;	if (!(P & F_N))	branch(data);	}
+#define BRANCH_DEFINITION_C(ins, flag) \
+	void mos6502:: ins (int8_t displacement) \
+	{ \
+		cycles += 2; \
+		if ((!(P & flag))) \
+			branch(displacement); \
+	}
 
-void mos6502::BEQ(int8_t data)	{	cycles += 2;	if (P & F_Z)	branch(data);	}
-void mos6502::BNE(int8_t data)	{	cycles += 2;	if (!(P & F_Z))	branch(data);	}
+#define BRANCH_REL_DEFINITION(ins) \
+	void mos6502:: ins ## _rel() \
+	{ \
+		ins(readByte_ImmediateDisplacement()); \
+	}
 
-void mos6502::BVS(int8_t data)	{	cycles += 2;	if (P & F_V)	branch(data);	}
-void mos6502::BVC(int8_t data)	{	cycles += 2;	if (!(P & F_V))	branch(data);	}
+#define BRANCH_DEFINITION(ins_s, ins_c, flag) \
+	BRANCH_DEFINITION_S(ins_s, flag) \
+	BRANCH_DEFINITION_C(ins_c, flag) \
+	BRANCH_REL_DEFINITION(ins_s) \
+	BRANCH_REL_DEFINITION(ins_c)
+
+BRANCH_DEFINITION(BCS, BCC, F_C)
+BRANCH_DEFINITION(BMI, BPL, F_N)
+BRANCH_DEFINITION(BEQ, BNE, F_Z)
+BRANCH_DEFINITION(BVS, BVC, F_V)
 
 void mos6502::branch(int8_t displacement)
 {
@@ -494,16 +527,16 @@ void mos6502::branch(int8_t displacement)
 		cycles += 2;
 }
 
-void mos6502::SED() { cycles += 2;	P |= F_D;	}
-void mos6502::CLD() { cycles += 2;	P &= ~F_D;	}
+void mos6502::SED_imp() { cycles += 2;	P |= F_D;	}
+void mos6502::CLD_imp() { cycles += 2;	P &= ~F_D;	}
 
-void mos6502::SEI() { cycles += 2;	P |= F_I;	}
-void mos6502::CLI() { cycles += 2;	P &= ~F_I;	}
+void mos6502::SEI_imp() { cycles += 2;	P |= F_I;	}
+void mos6502::CLI_imp() { cycles += 2;	P &= ~F_I;	}
 
-void mos6502::CLV() { cycles += 2;	P &= ~F_V;	}
+void mos6502::CLV_imp() { cycles += 2;	P &= ~F_V;	}
 
-void mos6502::SEC() { cycles += 2;	P |= F_C;	}
-void mos6502::CLC() { cycles += 2;	P &= ~F_C;	}
+void mos6502::SEC_imp() { cycles += 2;	P |= F_C;	}
+void mos6502::CLC_imp() { cycles += 2;	P &= ~F_C;	}
 
 //
 
@@ -514,13 +547,13 @@ void mos6502::DEC(uint16_t offset)
 	reflectFlags_ZeroNegative(content);
 }
 
-void mos6502::DEX()
+void mos6502::DEX_imp()
 {
 	reflectFlags_ZeroNegative(--X);
 	cycles += 2;
 }
 
-void mos6502::DEY()
+void mos6502::DEY_imp()
 {
 	reflectFlags_ZeroNegative(--Y);
 	cycles += 2;
@@ -533,19 +566,19 @@ void mos6502::INC(uint16_t offset)
 	reflectFlags_ZeroNegative(content);
 }
 
-void mos6502::INX()
+void mos6502::INX_imp()
 {
 	reflectFlags_ZeroNegative(++X);
 	cycles += 2;
 }
 
-void mos6502::INY()
+void mos6502::INY_imp()
 {
 	reflectFlags_ZeroNegative(++Y);
 	cycles += 2;
 }
 
-void mos6502::JSR()
+void mos6502::JSR_abs()
 {
 	auto destination = fetchWord();
 	pushWord(PC - 1);
@@ -553,26 +586,26 @@ void mos6502::JSR()
 	cycles += 6;
 }
 
-void mos6502::RTS()
+void mos6502::RTS_imp()
 {
 	PC = popWord() + 1;
 	cycles += 6;
 }
 
-void mos6502::PHA()
+void mos6502::PHA_imp()
 {
 	pushByte(A);
 	cycles += 3;
 }
 
-void mos6502::PLA()
+void mos6502::PLA_imp()
 {
 	A = popByte();
 	reflectFlags_ZeroNegative(A);
 	cycles += 4;
 }
 
-void mos6502::PHP()
+void mos6502::PHP_imp()
 {
 	pushStatus();
 	cycles += 3;
@@ -584,47 +617,47 @@ void mos6502::pushStatus()
 	pushByte(P);
 }
 
-void mos6502::PLP()
+void mos6502::PLP_imp()
 {
 	P = popByte();
 	cycles += 4;
 }
 
-void mos6502::TXS()
+void mos6502::TXS_imp()
 {
 	S = X;
 	cycles += 2;
 }
 
-void mos6502::TSX()
+void mos6502::TSX_imp()
 {
 	X = S;
 	reflectFlags_ZeroNegative(X);
 	cycles += 2;
 }
 
-void mos6502::TAX()
+void mos6502::TAX_imp()
 {
 	X = A;
 	reflectFlags_ZeroNegative(X);
 	cycles += 2;
 }
 
-void mos6502::TXA()
+void mos6502::TXA_imp()
 {
 	A = X;
 	reflectFlags_ZeroNegative(A);
 	cycles += 2;
 }
 
-void mos6502::TAY()
+void mos6502::TAY_imp()
 {
 	Y = A;
 	reflectFlags_ZeroNegative(Y);
 	cycles += 2;
 }
 
-void mos6502::TYA()
+void mos6502::TYA_imp()
 {
 	A = Y;
 	reflectFlags_ZeroNegative(A);
@@ -731,7 +764,7 @@ void mos6502::ROR(uint16_t offset)
 	setByte(offset, ROR(contents));
 }
 
-void mos6502::BRK()
+void mos6502::BRK_imp()
 {
 	pushWord(PC + 1);
 	pushStatus();
@@ -740,12 +773,150 @@ void mos6502::BRK()
 	cycles += 7;
 }
 
-void mos6502::RTI()
+void mos6502::RTI_imp()
 {
 	P = popByte();
 	PC = popWord();
 	cycles += 6;
 }
+
+void mos6502::JMP_abs()
+{
+	auto address = fetchWord();
+	PC = address;
+	cycles += 3;
+}
+
+void mos6502::JMP_ind()
+{
+	auto address = fetchWord();
+	PC = getWord(address);
+	cycles += 5;
+}
+
+//
+
+#define READER_XIND_DEFINITION(x) \
+	void mos6502::x ## _xind()	{ x(readByte_IndexedIndirectX());	}
+
+#define READER_ZP_DEFINITION(x) \
+	void mos6502::x ## _zp()	{ x(readByte_ZeroPage());			}
+
+#define READER_IMM_DEFINITION(x) \
+	void mos6502::x ## _imm()	{ x(readByte_Immediate());			}
+
+#define READER_ABS_DEFINITION(x) \
+	void mos6502::x ## _abs()	{ x(readByte_Absolute());			}
+
+#define READER_INDY_DEFINITION(x) \
+	void mos6502::x ## _indy()	{ x(readByte_IndirectIndexedY());	}
+
+#define READER_ZPX_DEFINITION(x) \
+	void mos6502::x ## _zpx()	{ x(readByte_ZeroPageX());			}
+
+#define READER_ZPY_DEFINITION(x) \
+	void mos6502::x ## _zpy()	{ x(readByte_ZeroPageY());			}
+
+#define READER_ABSY_DEFINITION(x) \
+	void mos6502::x ## _absy()	{ x(readByte_AbsoluteY());			}
+
+#define READER_ABSX_DEFINITION(x) \
+	void mos6502::x ## _absx()	{ x(readByte_AbsoluteX());			}
+
+#define READER_GROUP_A_DEFINITIONS(x) \
+	READER_XIND_DEFINITION(x) \
+	READER_ZP_DEFINITION(x) \
+	READER_IMM_DEFINITION(x) \
+	READER_ABS_DEFINITION(x) \
+	READER_INDY_DEFINITION(x) \
+	READER_ZPX_DEFINITION(x) \
+	READER_ABSY_DEFINITION(x) \
+	READER_ABSX_DEFINITION(x)
+
+READER_GROUP_A_DEFINITIONS(ORA)
+READER_GROUP_A_DEFINITIONS(AND)
+READER_GROUP_A_DEFINITIONS(EOR)
+READER_GROUP_A_DEFINITIONS(ADC)
+READER_GROUP_A_DEFINITIONS(LDA)
+READER_GROUP_A_DEFINITIONS(CMP)
+READER_GROUP_A_DEFINITIONS(SBC)
+
+#define READER_GROUP_X_DEFINITIONS(x) \
+	READER_IMM_DEFINITION(x) \
+	READER_ZP_DEFINITION(x) \
+	READER_ABS_DEFINITION(x) \
+	READER_ZPY_DEFINITION(x) \
+	READER_ABSY_DEFINITION(x)
+
+READER_GROUP_X_DEFINITIONS(LDX)
+
+#define READER_GROUP_Y_DEFINITIONS(x) \
+	READER_IMM_DEFINITION(x) \
+	READER_ZP_DEFINITION(x) \
+	READER_ABS_DEFINITION(x) \
+	READER_ZPX_DEFINITION(x) \
+	READER_ABSX_DEFINITION(x)
+
+READER_GROUP_Y_DEFINITIONS(LDY)
+
+#define READER_GROUP_CPXY_DEFINITIONS(x) \
+	READER_IMM_DEFINITION(x) \
+	READER_ZP_DEFINITION(x) \
+	READER_ABS_DEFINITION(x)
+
+READER_GROUP_CPXY_DEFINITIONS(CPX)
+READER_GROUP_CPXY_DEFINITIONS(CPY)
+
+//
+
+#define WRITER_XIND_DEFINITION(x, y) \
+	void mos6502::x ## _xind()	{ writeByte_IndexedIndirectX(y);	}
+
+#define WRITER_ZP_DEFINITION(x, y) \
+	void mos6502::x ## _zp()	{ writeByte_ZeroPage(y);			}
+
+#define WRITER_ABS_DEFINITION(x, y) \
+	void mos6502::x ## _abs()	{ writeByte_Absolute(y);			}
+
+#define WRITER_INDY_DEFINITION(x, y) \
+	void mos6502::STA_indy()	{ writeByte_IndirectIndexedY(y);	}
+
+#define WRITER_ZPX_DEFINITION(x, y) \
+	void mos6502::x ## _zpx()	{ writeByte_ZeroPageX(y);			}
+
+#define WRITER_ZPY_DEFINITION(x, y) \
+	void mos6502::x ## _zpy()	{ writeByte_ZeroPageY(y);			}
+
+#define WRITER_ABSY_DEFINITION(x, y) \
+	void mos6502::x ## _absy()	{ writeByte_AbsoluteY(y);			}
+
+#define WRITER_ABSX_DEFINITION(x, y) \
+	void mos6502::x ## _absx()	{ writeByte_AbsoluteX(y);			}
+
+#define WRITER_GROUP_A_DEFINITIONS(x, y) \
+	WRITER_XIND_DEFINITION(x, y) \
+	WRITER_ZP_DEFINITION(x, y) \
+	WRITER_ABS_DEFINITION(x, y) \
+	WRITER_INDY_DEFINITION(x, y) \
+	WRITER_ZPX_DEFINITION(x, y) \
+	WRITER_ABSY_DEFINITION(x, y) \
+	WRITER_ABSX_DEFINITION(x, y)
+
+WRITER_GROUP_A_DEFINITIONS(STA, A)
+
+#define WRITER_GROUP_X_DEFINITIONS(x, y) \
+	WRITER_ZP_DEFINITION(x, y) \
+	WRITER_ABS_DEFINITION(x, y) \
+	WRITER_ZPY_DEFINITION(x, y)
+
+WRITER_GROUP_X_DEFINITIONS(STX, X)
+
+#define WRITER_GROUP_Y_DEFINITIONS(x, y) \
+	WRITER_ZP_DEFINITION(x, y) \
+	WRITER_ABS_DEFINITION(x, y) \
+	WRITER_ZPX_DEFINITION(x, y)
+
+WRITER_GROUP_Y_DEFINITIONS(STY, Y)
 
 //
 
@@ -771,228 +942,176 @@ void mos6502::step()
 
 		switch (op_code) {
 
-		case 0b000:	// BPL
+		case 0b000:
 			switch (addressing_mode) {
-
 			case 0b00:
-				BRK();
+				BRK_imp();
 				break;
-
 			case 0b100:
-				BPL(readByte_ImmediateDisplacement());
+				BPL_rel();
 				break;
-
-			case 0b110:	 // CLC
-				CLC();
+			case 0b110:
+				CLC_imp();
 				break;
-
 			case 0b010:
-				PHP();
+				PHP_imp();
 				break;
 			}
 			break;
-
-		case 0b001:	//	BIT
+		case 0b001:
 			switch (addressing_mode) {
-
 			case 0b001:
-				BIT(readByte_ZeroPage());
-				cycles++;
+				BIT_zp();
 				break;
 			case 0b011:
-				BIT(readByte_Absolute());
-				cycles += 2;
+				BIT_abs();
 				break;
-
-			case 0b000: // JSR
-				JSR();
+			case 0b000:
+				JSR_abs();
 				break;
-
 			case 0b100:
-				BMI(readByte_ImmediateDisplacement());
+				BMI_rel();
 				break;
-
 			case 0b110:
-				SEC();
+				SEC_imp();
 				break;
-
 			case 0b010:
-				PLP();
+				PLP_imp();
 				break;
 			}
 			break;
-
 		case 0b010:
 			switch (addressing_mode)
 			{
-
-			case 0b010: // PHA
-				PHA();
+			case 0b010:
+				PHA_imp();
 				break;
-
 			case 0b011:
-				{
-					auto address = fetchWord();
-					PC = address;
-					cycles += 3;
-				}
+				JMP_abs();
 				break;
-
 			case 0b100:
-				BVC(readByte_ImmediateDisplacement());
+				BVC_rel();
 				break;
-
 			case 0b000:
-				RTI();
+				RTI_imp();
 				break;
-
 			case 0b110:
-				CLI();
+				CLI_imp();
 				break;
 			}
 			break;
-
 		case 0b011:
 			switch (addressing_mode)
 			{
-
-			case 0b000: // RTS
-				RTS();
+			case 0b000:
+				RTS_imp();
 				break;
-
-			case 0b010:	// PLA
-				PLA();
+			case 0b010:
+				PLA_imp();
 				break;
-
-			case 0b011: // JMP (indirect)
-				{
-					auto address = fetchWord();
-					PC = getWord(address);
-					cycles += 5;
-				}
+			case 0b011:
+				JMP_ind();
 				break;
-
 			case 0b100:
-				BVS(readByte_ImmediateDisplacement());
+				BVS_rel();
 				break;
-
 			case 0b110:
-				SEI();
+				SEI_imp();
 				break;
 			}
 			break;
-
-		case 0b100:	//	DEY
+		case 0b100:
 			switch (addressing_mode)
 			{
-
-			case 0b010:	// Implied DEY
-				DEY();
+			case 0b010:
+				DEY_imp();
 				break;
-
-			case 0b100: // BCC rel
-				BCC(readByte_ImmediateDisplacement());
-				break;
-
-			case 0b001: // STY zero page
-				writeByte_ZeroPage(Y);
-				break;
-			case 0b011: // STY absolute
-				writeByte_Absolute(Y);
-				break;
-			case 0b101: // STY zero page, X
-				writeByte_ZeroPageX(Y);
-				break;
-
-			case 0b110: // TYA
-				TYA();
-				break;
-			}
-			break;
-
-		case 0b101:
-			switch (addressing_mode) {
-
-			case 0b000:
-				LDY(readByte_Immediate());
+			case 0b100:
+				BCC_rel();
 				break;
 			case 0b001:
-				LDY(readByte_ZeroPage());
+				STY_zp();
 				break;
 			case 0b011:
-				LDY(readByte_Absolute());
+				STY_abs();
 				break;
 			case 0b101:
-				LDY(readByte_ZeroPageX());
+				STY_zpx();
+				break;
+			case 0b110:
+				TYA_imp();
+				break;
+			}
+			break;
+		case 0b101:
+			switch (addressing_mode) {
+			case 0b000:
+				LDY_imm();
+				break;
+			case 0b001:
+				LDY_zp();
+				break;
+			case 0b011:
+				LDY_abs();
+				break;
+			case 0b101:
+				LDY_zpx();
 				break;
 			case 0b111:
-				LDY(readByte_AbsoluteX());
+				LDY_absx();
 				break;
-
 			case 0b100:
-				BCS(readByte_ImmediateDisplacement());
+				BCS_rel();
 				break;
-
-			case 0b010: // TAY
-				TAY();
-				break;
-
-			case 0b110:
-				CLV();
-				break;
-			}
-			break;
-
-		case 0b110:	//	CPY
-			switch (addressing_mode) {
-
-			case 0b000:
-				CPY(readByte_Immediate());
-				break;
-			case 0b001:
-				CPY(readByte_ZeroPage());
-				break;
-			case 0b011:
-				CPY(readByte_Absolute());
-				break;
-
-			case 0b100:	// BNE
-				BNE(readByte_ImmediateDisplacement());
-				break;
-
-			case 0b010:	// INY
-				INY();
-				break;
-
-			case 0b110:
-				CLD();
-				break;
-			}
-			break;
-
-		case 0b111:	//	CPX
-			switch (addressing_mode) {
-
-			case 0b000:
-				CPX(readByte_Immediate());
-				break;
-			case 0b001:
-				CPX(readByte_ZeroPage());
-				break;
-			case 0b011:
-				CPX(readByte_Absolute());
-				break;
-
-			case 0b100:
-				BEQ(readByte_ImmediateDisplacement());
-				break;
-
 			case 0b010:
-				INX();
+				TAY_imp();
 				break;
-
 			case 0b110:
-				SED();
+				CLV_imp();
+				break;
+			}
+			break;
+		case 0b110:
+			switch (addressing_mode) {
+			case 0b000:
+				CPY_imm();
+				break;
+			case 0b001:
+				CPY_zp();
+				break;
+			case 0b011:
+				CPY_abs();
+				break;
+			case 0b100:
+				BNE_rel();
+				break;
+			case 0b010:
+				INY_imp();
+				break;
+			case 0b110:
+				CLD_imp();
+				break;
+			}
+			break;
+		case 0b111:
+			switch (addressing_mode) {
+			case 0b000:
+				CPX_imm();
+				break;
+			case 0b001:
+				CPX_zp();
+				break;
+			case 0b011:
+				CPX_abs();
+				break;
+			case 0b100:
+				BEQ_rel();
+				break;
+			case 0b010:
+				INX_imp();
+				break;
+			case 0b110:
+				SED_imp();
 				break;
 			}
 			break;
@@ -1002,399 +1121,363 @@ void mos6502::step()
 	case 0b01:
 
 		switch (op_code) {
-
-		case 0b000:	//	ORA
+		case 0b000:
 			switch (addressing_mode) {
-
 			case 0b000:
-				ORA(readByte_IndexedIndirectX());
+				ORA_xind();
 				break;
 			case 0b001:
-				ORA(readByte_ZeroPage());
+				ORA_zp();
 				break;
 			case 0b010:
-				ORA(readByte_Immediate());
+				ORA_imm();
 				break;
 			case 0b011:
-				ORA(readByte_Absolute());
+				ORA_abs();
 				break;
 			case 0b100:
-				ORA(readByte_IndirectIndexedY());
+				ORA_indy();
 				break;
 			case 0b101:
-				ORA(readByte_ZeroPageX());
+				ORA_zpx();
 				break;
 			case 0b110:
-				ORA(readByte_AbsoluteY());
+				ORA_absy();
 				break;
 			case 0b111:
-				ORA(readByte_AbsoluteX());
+				ORA_absx();
 				break;
 			}
 			break;
-
-		case 0b001:	//	AND
+		case 0b001:
 			switch (addressing_mode) {
-
 			case 0b000:
-				AND(readByte_IndexedIndirectX());
+				AND_xind();
 				break;
 			case 0b001:
-				AND(readByte_ZeroPage());
+				AND_zp();
 				break;
 			case 0b010:
-				AND(readByte_Immediate());
+				AND_imm();
 				break;
 			case 0b011:
-				AND(readByte_Absolute());
+				AND_abs();
 				break;
 			case 0b100:
-				AND(readByte_IndirectIndexedY());
+				AND_indy();
 				break;
 			case 0b101:
-				AND(readByte_ZeroPageX());
+				AND_zpx();
 				break;
 			case 0b110:
-				AND(readByte_AbsoluteY());
+				AND_absy();
 				break;
 			case 0b111:
-				AND(readByte_AbsoluteX());
+				AND_absx();
 				break;
 			}
 			break;
-
-		case 0b010:	//	EOR
+		case 0b010:
 			switch (addressing_mode) {
-
 			case 0b000:
-				EOR(readByte_IndexedIndirectX());
+				EOR_xind();
 				break;
 			case 0b001:
-				EOR(readByte_ZeroPage());
+				EOR_zp();
 				break;
 			case 0b010:
-				EOR(readByte_Immediate());
+				EOR_imm();
 				break;
 			case 0b011:
-				EOR(readByte_Absolute());
+				EOR_abs();
 				break;
 			case 0b100:
-				EOR(readByte_IndirectIndexedY());
+				EOR_indy();
 				break;
 			case 0b101:
-				EOR(readByte_ZeroPageX());
+				EOR_zpx();
 				break;
 			case 0b110:
-				EOR(readByte_AbsoluteY());
+				EOR_absy();
 				break;
 			case 0b111:
-				EOR(readByte_AbsoluteX());
+				EOR_absx();
 				break;
 			}
 			break;
-
-		case 0b011:	//	ADC
+		case 0b011:
 			switch (addressing_mode) {
-
 			case 0b000:
-				ADC(readByte_IndexedIndirectX());
+				ADC_xind();
 				break;
 			case 0b001:
-				ADC(readByte_ZeroPage());
+				ADC_zp();
 				break;
 			case 0b010:
-				ADC(readByte_Immediate());
+				ADC_imm();
 				break;
 			case 0b011:
-				ADC(readByte_Absolute());
+				ADC_abs();
 				break;
 			case 0b100:
-				ADC(readByte_IndirectIndexedY());
+				ADC_indy();
 				break;
 			case 0b101:
-				ADC(readByte_ZeroPageX());
+				ADC_zpx();
 				break;
 			case 0b110:
-				ADC(readByte_AbsoluteY());
+				ADC_absy();
 				break;
 			case 0b111:
-				ADC(readByte_AbsoluteX());
+				ADC_absx();
 				break;
 			}
 			break;
-
-		case 0b100:	//	STA
+		case 0b100:
 			switch (addressing_mode) {
-
 			case 0b000:
-				writeByte_IndexedIndirectX(A);
+				STA_xind();
 				break;
 			case 0b001:
-				writeByte_ZeroPage(A);
+				STA_zp();
 				break;
 			case 0b011:
-				writeByte_Absolute(A);
+				STA_abs();
 				break;
 			case 0b100:
-				writeByte_IndirectIndexedY(A);
+				STA_indy();
 				break;
 			case 0b101:
-				writeByte_ZeroPageX(A);
+				STA_zpx();
 				break;
 			case 0b110:
-				writeByte_AbsoluteY(A);
+				STA_absy();
 				break;
 			case 0b111:
-				writeByte_AbsoluteX(A);
+				STA_absx();
 				break;
 			}
 			break;
-
-		case 0b101:	//	LDA
-
+		case 0b101:
 			switch (addressing_mode) {
 			case 0b000:
-				LDA(readByte_IndexedIndirectX());
+				LDA_xind();
 				break;
 			case 0b001:
-				LDA(readByte_ZeroPage());
+				LDA_zp();
 				break;
 			case 0b010:
-				LDA(readByte_Immediate());
+				LDA_imm();
 				break;
 			case 0b011:
-				LDA(readByte_Absolute());
+				LDA_abs();
 				break;
 			case 0b100:
-				LDA(readByte_IndirectIndexedY());
+				LDA_indy();
 				break;
 			case 0b101:
-				LDA(readByte_ZeroPageX());
+				LDA_zpx();
 				break;
 			case 0b110:
-				LDA(readByte_AbsoluteY());
+				LDA_absy();
 				break;
 			case 0b111:
-				LDA(readByte_AbsoluteX());
-				break;
-
-			default:
-				assert(false && "unknown LDA addressing mode");
-			}
-			break;
-
-		case 0b110:	//	CMP
-			switch (addressing_mode) {
-
-			case 0b000:
-				CMP(readByte_IndexedIndirectX());
-				break;
-			case 0b001:
-				CMP(readByte_ZeroPage());
-				break;
-			case 0b010:
-				CMP(readByte_Immediate());
-				break;
-			case 0b011:
-				CMP(readByte_Absolute());
-				break;
-			case 0b100:
-				CMP(readByte_IndirectIndexedY());
-				break;
-			case 0b101:
-				CMP(readByte_ZeroPageX());
-				break;
-			case 0b110:
-				CMP(readByte_AbsoluteY());
-				break;
-			case 0b111:
-				CMP(readByte_AbsoluteX());
+				LDA_absx();
 				break;
 			}
 			break;
-
-		case 0b111:	//	SBC
+		case 0b110:
 			switch (addressing_mode) {
-
 			case 0b000:
-				SBC(readByte_IndexedIndirectX());
+				CMP_xind();
 				break;
 			case 0b001:
-				SBC(readByte_ZeroPage());
+				CMP_zp();
 				break;
 			case 0b010:
-				SBC(readByte_Immediate());
+				CMP_imm();
 				break;
 			case 0b011:
-				SBC(readByte_Absolute());
+				CMP_abs();
 				break;
 			case 0b100:
-				SBC(readByte_IndirectIndexedY());
+				CMP_indy();
 				break;
 			case 0b101:
-				SBC(readByte_ZeroPageX());
+				CMP_zpx();
 				break;
 			case 0b110:
-				SBC(readByte_AbsoluteY());
+				CMP_absy();
 				break;
 			case 0b111:
-				SBC(readByte_AbsoluteX());
+				CMP_absx();
+				break;
+			}
+			break;
+		case 0b111:
+			switch (addressing_mode) {
+			case 0b000:
+				SBC_xind();
+				break;
+			case 0b001:
+				SBC_zp();
+				break;
+			case 0b010:
+				SBC_imm();
+				break;
+			case 0b011:
+				SBC_abs();
+				break;
+			case 0b100:
+				SBC_indy();
+				break;
+			case 0b101:
+				SBC_zpx();
+				break;
+			case 0b110:
+				SBC_absy();
+				break;
+			case 0b111:
+				SBC_absx();
 				break;
 			}
 			break;
 		}
 		break;
 
-
 	case 0b10:
 
 		switch (op_code) {
-
-		case 0b000:	//	ASL
+		case 0b000:
 			switch (addressing_mode)
 			{
-
-			case 0b001:	// ASL zp
+			case 0b001:
 				ACTION_ZP(ASL);
 				cycles += 5;
 				break;
-			case 0b010:	// ASL A
+			case 0b010:
 				ACTION_A(ASL);
 				break;
-			case 0b011:	// ASL absolute
+			case 0b011:
 				ACTION_ABSOLUTE(ASL);
 				break;
-			case 0b101:	// ASL zp,X
+			case 0b101:
 				ACTION_ZEROPAGEX(ASL);
 				break;
-			case 0b111:	// ASL absolute,X
+			case 0b111:
 				ACTION_ABSOLUTEX(ASL);
 				break;
 			}
 			break;
-
-		case 0b001:	//	ROL
+		case 0b001:
 			switch (addressing_mode)
 			{
-
-			case 0b001:	// ROL ZP
+			case 0b001:
 				ACTION_ZP(ROL);
 				cycles += 5;
 				break;
-			case 0b010:	// ROL A
+			case 0b010:
 				ACTION_A(ROL);
 				break;
-			case 0b011:	// ROL absolute
+			case 0b011:
 				ACTION_ABSOLUTE(ROL);
 				break;
-			case 0b101:	// ROL zp,x
+			case 0b101:
 				ACTION_ZEROPAGEX(ROL);
 				break;
-			case 0b111:	// ROL absolute,x
+			case 0b111:
 				ACTION_ABSOLUTEX(ROL);
 				break;
 			}
 			break;
-
-		case 0b010:	//	LSR
+		case 0b010:
 			switch (addressing_mode)
 			{
-
-			case 0b001:	// LSR ZP
+			case 0b001:
 				ACTION_ZP(LSR);
 				cycles += 5;
 				break;
-			case 0b010:	// LSR A
+			case 0b010:
 				ACTION_A(LSR);
 				break;
-			case 0b011:	// LSR absolute
+			case 0b011:
 				ACTION_ABSOLUTE(LSR);
 				break;
-			case 0b101:	// LSR zp,x
+			case 0b101:
 				ACTION_ZEROPAGEX(LSR);
 				break;
-			case 0b111:	// LSR absolute,x
+			case 0b111:
 				ACTION_ABSOLUTEX(LSR);
 				break;
 			}
 			break;
-
-		case 0b011:	//	ROR
+		case 0b011:
 			switch (addressing_mode)
 			{
-
-			case 0b001:	// ROR ZP
+			case 0b001:
 				ACTION_ZP(ROR);
 				cycles += 5;
 				break;
-			case 0b010:	// ROR A
+			case 0b010:
 				ACTION_A(ROR);
 				break;
-			case 0b011:	// ROR absolute
+			case 0b011:
 				ACTION_ABSOLUTE(ROR);
 				break;
-			case 0b101:	// ROR zp,x
+			case 0b101:
 				ACTION_ZEROPAGEX(ROR);
 				break;
-			case 0b111:	// ROR absolute,x
+			case 0b111:
 				ACTION_ABSOLUTEX(ROR);
 				break;
 			}
 			break;
-
-		case 0b100:	//	STX
+		case 0b100:
 			switch (addressing_mode) {
-
 			case 0b001:
-				writeByte_ZeroPage(X);
+				STX_zp();
 				break;
 			case 0b011:
-				writeByte_Absolute(X);
+				STX_abs();
 				break;
 			case 0b101:
-				writeByte_ZeroPageY(X);
+				STX_zpy();
 				break;
-
-			case 0b010:	// TXA
-				TXA();
-				break;
-			case 0b110:	// TXS
-				TXS();
-				break;
-			}
-			break;
-
-		case 0b101:	//	LDX
-			switch (addressing_mode) {
-
-			case 0b000:
-				LDX(readByte_Immediate());
-				break;
-			case 0b001:
-				LDX(readByte_ZeroPage());
-				break;
-			case 0b011:
-				LDX(readByte_Absolute());
-				break;
-			case 0b101:
-				LDX(readByte_ZeroPageY());
-				break;
-			case 0b111:
-				LDX(readByte_AbsoluteY());
-				break;
-
 			case 0b010:
-				TAX();
+				TXA_imp();
 				break;
 			case 0b110:
-				TSX();
+				TXS_imp();
 				break;
 			}
 			break;
-
-		case 0b110:	//	DEC
+		case 0b101:
 			switch (addressing_mode) {
-
+			case 0b000:
+				LDX_imm();
+				break;
+			case 0b001:
+				LDX_zp();
+				break;
+			case 0b011:
+				LDX_abs();
+				break;
+			case 0b101:
+				LDX_zpy();
+				break;
+			case 0b111:
+				LDX_absy();
+				break;
+			case 0b010:
+				TAX_imp();
+				break;
+			case 0b110:
+				TSX_imp();
+				break;
+			}
+			break;
+		case 0b110:
+			switch (addressing_mode) {
 			case 0b001:
 				ACTION_ZP(DEC);
 				break;
@@ -1407,15 +1490,13 @@ void mos6502::step()
 			case 0b111:
 				ACTION_ABSOLUTEX(DEC);
 				break;
-			case 0b010:	// DEX
-				ACTION_IMPLIED(DEX);
+			case 0b010:
+				DEX_imp();
 				break;
 			}
 			break;
-
-		case 0b111:	//	INC
+		case 0b111:
 			switch (addressing_mode) {
-
 			case 0b001:
 				ACTION_ZP(INC);
 				break;
@@ -1428,7 +1509,6 @@ void mos6502::step()
 			case 0b111:
 				ACTION_ABSOLUTEX(INC);
 				break;
-
 			case 0b010:	// NOP
 				break;
 			}

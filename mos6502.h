@@ -11,9 +11,6 @@
 		ACTION((uint16_t)zp); \
 	}
 
-#define ACTION_IMPLIED(ACTION) \
-	ACTION();
-
 #define ACTION_A(ACTION) \
 	A = ACTION(A);
 
@@ -73,7 +70,118 @@ public:
 	uint8_t P;		// processor status
 
 private:
+
+#define BRANCH_DECLARATION(ins) \
+	void ins(int8_t displacement); \
+	void ins ## _rel();
+
+	BRANCH_DECLARATION(BCS)
+	BRANCH_DECLARATION(BCC)
+
+	BRANCH_DECLARATION(BMI)
+	BRANCH_DECLARATION(BPL)
+
+	BRANCH_DECLARATION(BEQ)
+	BRANCH_DECLARATION(BNE)
+
+	BRANCH_DECLARATION(BVS)
+	BRANCH_DECLARATION(BVC)
+
 	void branch(int8_t displacement);
+
+	void CLV_imp();
+	void SEI_imp();
+	void CLI_imp();
+	void SED_imp();
+	void CLD_imp();
+	void SEC_imp();
+	void CLC_imp();
+
+	void BIT(uint8_t data);
+	void BIT_abs();
+	void BIT_zp();
+
+	void JMP_abs();
+	void JMP_ind();
+
+#define XIND_DECLARATION(x)	void x ## _xind();
+#define ZP_DECLARATION(x)	void x ## _zp();
+#define IMM_DECLARATION(x)	void x ## _imm();
+#define ABS_DECLARATION(x)	void x ## _abs();
+#define INDY_DECLARATION(x)	void x ## _indy();
+#define ZPX_DECLARATION(x)	void x ## _zpx();
+#define ZPY_DECLARATION(x)	void x ## _zpy();
+#define ABSX_DECLARATION(x)	void x ## _absx();
+#define ABSY_DECLARATION(x)	void x ## _absy();
+
+#define READER_GROUP_A_DECLARATIONS(x) \
+	XIND_DECLARATION(x) \
+	ZP_DECLARATION(x) \
+	IMM_DECLARATION(x) \
+	ABS_DECLARATION(x) \
+	INDY_DECLARATION(x) \
+	ZPX_DECLARATION(x) \
+	ABSX_DECLARATION(x) \
+	ABSY_DECLARATION(x)
+
+	READER_GROUP_A_DECLARATIONS(ORA)
+	READER_GROUP_A_DECLARATIONS(AND)
+	READER_GROUP_A_DECLARATIONS(EOR)
+	READER_GROUP_A_DECLARATIONS(ADC)
+	READER_GROUP_A_DECLARATIONS(LDA)
+	READER_GROUP_A_DECLARATIONS(CMP)
+	READER_GROUP_A_DECLARATIONS(SBC)
+
+#define READER_GROUP_X_DECLARATIONS(x) \
+	IMM_DECLARATION(x) \
+	ZP_DECLARATION(x) \
+	ABS_DECLARATION(x) \
+	ZPY_DECLARATION(x) \
+	ABSY_DECLARATION(x)
+
+	READER_GROUP_X_DECLARATIONS(LDX)
+
+#define READER_GROUP_Y_DECLARATIONS(x) \
+	IMM_DECLARATION(x) \
+	ZP_DECLARATION(x) \
+	ABS_DECLARATION(x) \
+	ZPX_DECLARATION(x) \
+	ABSX_DECLARATION(x)
+
+	READER_GROUP_Y_DECLARATIONS(LDY)
+
+#define READER_GROUP_CPXY_DECLARATIONS(x) \
+	IMM_DECLARATION(x) \
+	ZP_DECLARATION(x) \
+	ABS_DECLARATION(x) \
+
+READER_GROUP_CPXY_DECLARATIONS(CPX)
+READER_GROUP_CPXY_DECLARATIONS(CPY)
+
+#define WRITER_GROUP_A_DECLARATIONS(x) \
+	XIND_DECLARATION(x) \
+	ZP_DECLARATION(x) \
+	ABS_DECLARATION(x) \
+	INDY_DECLARATION(x) \
+	ZPX_DECLARATION(x) \
+	ABSY_DECLARATION(x) \
+	ABSX_DECLARATION(x)
+
+	WRITER_GROUP_A_DECLARATIONS(STA)
+
+#define WRITER_GROUP_X_DECLARATIONS(x) \
+	ZP_DECLARATION(x) \
+	ABS_DECLARATION(x) \
+	ZPY_DECLARATION(x)
+
+	WRITER_GROUP_X_DECLARATIONS(STX)
+
+#define WRITER_GROUP_Y_DECLARATIONS(x) \
+	ZP_DECLARATION(x) \
+	ABS_DECLARATION(x) \
+	ZPX_DECLARATION(x)
+
+	WRITER_GROUP_Y_DECLARATIONS(STY)
 
 	void CMP(uint8_t first, uint8_t second);
 
@@ -85,7 +193,6 @@ private:
 	void SBC_d(uint8_t data);
 	void SBC_b(uint8_t data);
 
-	void BIT(uint8_t data);
 	void CPX(uint8_t data);
 	void CPY(uint8_t data);
 	void LDY(uint8_t data);
@@ -95,41 +202,27 @@ private:
 	void LDA(uint8_t data);
 	void CMP(uint8_t data);
 	void LDX(uint8_t data);
-	void BPL(int8_t data);
 	void DEC(uint16_t offset);
 	void INC(uint16_t offset);
-	void BEQ(int8_t data);
-	void BNE(int8_t data);
-	void BCC(int8_t data);
-	void BCS(int8_t data);
-	void BMI(int8_t data);
-	void BVC(int8_t data);
-	void BVS(int8_t data);
-	void JSR();
-	void RTS();
-	void PHA();
-	void PLA();
-	void PHP();
-	void PLP();
-	void DEX();
-	void DEY();
-	void INX();
-	void INY();
-	void CLC();
-	void SEC();
-	void CLV();
-	void TAX();
-	void TXA();
-	void TAY();
-	void TYA();
-	void TXS();
-	void TSX();
-	void BRK();
-	void RTI();
-	void SEI();
-	void CLI();
-	void SED();
-	void CLD();
+
+	void JSR_abs();
+	void RTS_imp();
+	void PHA_imp();
+	void PLA_imp();
+	void PHP_imp();
+	void PLP_imp();
+	void DEX_imp();
+	void DEY_imp();
+	void INX_imp();
+	void INY_imp();
+	void TAX_imp();
+	void TXA_imp();
+	void TAY_imp();
+	void TYA_imp();
+	void TXS_imp();
+	void TSX_imp();
+	void BRK_imp();
+	void RTI_imp();
 
 	void ASL(uint16_t offset);
 	void ROL(uint16_t offset);
