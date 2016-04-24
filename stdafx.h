@@ -14,6 +14,9 @@
 
 // TODO: reference additional headers your program requires here
 
+#include <ctime>
+#include <iostream>
+
 //#define TEST_SUITE1
 #define TEST_SUITE2
 //#define EHBASIC
