@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <map>
 
 #define FIRST_PAGE 0x100
 
@@ -89,7 +88,6 @@ public:
 	mos6502();
 	~mos6502();
 
-	void readRom(std::string path, size_t offset);
 	void clearMemory();
 	void resetRegisters();
 

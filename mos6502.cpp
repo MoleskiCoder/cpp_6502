@@ -1,9 +1,6 @@
 #include "stdafx.h"
 #include "mos6502.h"
 
-#include <fstream>
-#include <iterator>
-#include <algorithm>
 #include <assert.h>
 
 mos6502::mos6502()
@@ -13,18 +10,6 @@ mos6502::mos6502()
 
 mos6502::~mos6502()
 {
-}
-
-void mos6502::readRom(std::string path, size_t offset)
-{
-	std::ifstream file(path, std::ios::binary | std::ios::ate);
-	auto size = (int)file.tellg();
-	file.seekg(0, std::ios::beg);
-	std::vector<char> buffer(size);
-	file.read(&buffer[0], size);
-	file.close();
-
-	std::copy(buffer.begin(), buffer.end(), memory.begin() + offset);
 }
 
 void mos6502::clearMemory()
