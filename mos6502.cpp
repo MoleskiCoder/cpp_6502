@@ -920,6 +920,63 @@ WRITER_GROUP_Y_DEFINITIONS(STY, Y)
 
 //
 
+#define ACTION_ZP_DEFINITION(ACTION) \
+	void mos6502::ACTION ## _zp() \
+	{ \
+		auto zp = fetchByte(); \
+		ACTION((uint16_t)zp); \
+	}
+
+#define ACTION_IMP_DEFINITION(ACTION, REGISTER) \
+	void mos6502::ACTION ## _imp() \
+	{ \
+		REGISTER = ACTION(REGISTER); \
+	}
+
+#define ACTION_ABS_DEFINITION(ACTION) \
+	void mos6502::ACTION ## _abs() \
+	{ \
+		auto address = fetchWord(); \
+		ACTION(address); \
+	}
+
+#define ACTION_ZPX_DEFINITION(ACTION) \
+	void mos6502::ACTION ## _zpx() \
+	{ \
+		auto zp = fetchByte(); \
+		ACTION((uint16_t)(lowByte(zp + X))); \
+	}
+
+#define ACTION_ABSX_DEFINITION(ACTION) \
+	void mos6502::ACTION ## _absx() \
+	{ \
+		auto address = fetchWord(); \
+		ACTION((uint16_t)(address + X)); \
+	}
+
+#define ROTATION_GROUP_DEFINITIONS(x) \
+	ACTION_ZP_DEFINITION(x) \
+	ACTION_IMP_DEFINITION(x, A) \
+	ACTION_ABS_DEFINITION(x) \
+	ACTION_ZPX_DEFINITION(x) \
+	ACTION_ABSX_DEFINITION(x)
+
+ROTATION_GROUP_DEFINITIONS(ASL);
+ROTATION_GROUP_DEFINITIONS(ROL);
+ROTATION_GROUP_DEFINITIONS(LSR);
+ROTATION_GROUP_DEFINITIONS(ROR);
+
+#define INCDEC_GROUP_A_DEFINITIONS(x) \
+	ACTION_ZP_DEFINITION(x) \
+	ACTION_ABS_DEFINITION(x) \
+	ACTION_ZPX_DEFINITION(x) \
+	ACTION_ABSX_DEFINITION(x)
+
+INCDEC_GROUP_A_DEFINITIONS(INC)
+INCDEC_GROUP_A_DEFINITIONS(DEC)
+
+//
+
 void mos6502::step()
 {
 	auto current = fetchByte();
@@ -1352,20 +1409,19 @@ void mos6502::step()
 			switch (addressing_mode)
 			{
 			case 0b001:
-				ACTION_ZP(ASL);
-				cycles += 5;
+				ASL_zp();
 				break;
 			case 0b010:
-				ACTION_A(ASL);
+				ASL_imp();
 				break;
 			case 0b011:
-				ACTION_ABSOLUTE(ASL);
+				ASL_abs();
 				break;
 			case 0b101:
-				ACTION_ZEROPAGEX(ASL);
+				ASL_zpx();
 				break;
 			case 0b111:
-				ACTION_ABSOLUTEX(ASL);
+				ASL_absx();
 				break;
 			}
 			break;
@@ -1373,20 +1429,19 @@ void mos6502::step()
 			switch (addressing_mode)
 			{
 			case 0b001:
-				ACTION_ZP(ROL);
-				cycles += 5;
+				ROL_zp();
 				break;
 			case 0b010:
-				ACTION_A(ROL);
+				ROL_imp();
 				break;
 			case 0b011:
-				ACTION_ABSOLUTE(ROL);
+				ROL_abs();
 				break;
 			case 0b101:
-				ACTION_ZEROPAGEX(ROL);
+				ROL_zpx();
 				break;
 			case 0b111:
-				ACTION_ABSOLUTEX(ROL);
+				ROL_absx();
 				break;
 			}
 			break;
@@ -1394,20 +1449,19 @@ void mos6502::step()
 			switch (addressing_mode)
 			{
 			case 0b001:
-				ACTION_ZP(LSR);
-				cycles += 5;
+				LSR_zp();
 				break;
 			case 0b010:
-				ACTION_A(LSR);
+				LSR_imp();
 				break;
 			case 0b011:
-				ACTION_ABSOLUTE(LSR);
+				LSR_abs();
 				break;
 			case 0b101:
-				ACTION_ZEROPAGEX(LSR);
+				LSR_zpx();
 				break;
 			case 0b111:
-				ACTION_ABSOLUTEX(LSR);
+				LSR_absx();
 				break;
 			}
 			break;
@@ -1415,20 +1469,19 @@ void mos6502::step()
 			switch (addressing_mode)
 			{
 			case 0b001:
-				ACTION_ZP(ROR);
-				cycles += 5;
+				ROR_zp();
 				break;
 			case 0b010:
-				ACTION_A(ROR);
+				ROR_imp();
 				break;
 			case 0b011:
-				ACTION_ABSOLUTE(ROR);
+				ROR_abs();
 				break;
 			case 0b101:
-				ACTION_ZEROPAGEX(ROR);
+				ROR_zpx();
 				break;
 			case 0b111:
-				ACTION_ABSOLUTEX(ROR);
+				ROR_absx();
 				break;
 			}
 			break;
@@ -1479,16 +1532,16 @@ void mos6502::step()
 		case 0b110:
 			switch (addressing_mode) {
 			case 0b001:
-				ACTION_ZP(DEC);
+				DEC_zp();
 				break;
 			case 0b011:
-				ACTION_ABSOLUTE(DEC);
+				DEC_abs();
 				break;
 			case 0b101:
-				ACTION_ZEROPAGEX(DEC);
+				DEC_zpx();
 				break;
 			case 0b111:
-				ACTION_ABSOLUTEX(DEC);
+				DEC_absx();
 				break;
 			case 0b010:
 				DEX_imp();
@@ -1498,16 +1551,16 @@ void mos6502::step()
 		case 0b111:
 			switch (addressing_mode) {
 			case 0b001:
-				ACTION_ZP(INC);
+				INC_zp();
 				break;
 			case 0b011:
-				ACTION_ABSOLUTE(INC);
+				INC_abs();
 				break;
 			case 0b101:
-				ACTION_ZEROPAGEX(INC);
+				INC_zpx();
 				break;
 			case 0b111:
-				ACTION_ABSOLUTEX(INC);
+				INC_absx();
 				break;
 			case 0b010:	// NOP
 				break;
