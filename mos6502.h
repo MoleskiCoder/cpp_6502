@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 
 #define FIRST_PAGE 0x100
 
@@ -254,8 +255,16 @@ private:
 
 	// get/set memory
 
-	uint8_t getByte(uint16_t offset);
-	void setByte(uint16_t offset, uint8_t value);
+	uint8_t getByte(uint16_t offset)
+	{
+		return memory[offset];
+	}
+
+	void setByte(uint16_t offset, uint8_t value)
+	{
+		memory[offset] = value;
+	}
+
 
 	uint16_t getWord(uint16_t offset);
 

@@ -29,16 +29,6 @@ void mos6502::resetRegisters()
 
 //
 
-uint8_t mos6502::getByte(uint16_t offset)
-{
-	return memory[offset];
-}
-
-void mos6502::setByte(uint16_t offset, uint8_t value)
-{
-	memory[offset] = value;
-}
-
 uint16_t mos6502::getWord(uint16_t offset)
 {
 	auto low = getByte(offset);
@@ -80,32 +70,27 @@ uint16_t mos6502::fetchWord_Indirect()
 
 uint8_t mos6502::readByte_Immediate()
 {
-	auto value = fetchByte();
-	return value;
+	return fetchByte();
 }
 
 uint8_t mos6502::readByte_ZeroPage()
 {
-	auto zp = fetchByte();
-	return getByte(zp);
+	return getByte(fetchByte());
 }
 
 int8_t mos6502::readByte_ImmediateDisplacement()
 {
-	auto displacment = (int8_t)fetchByte();
-	return displacment;
+	return fetchByte();
 }
 
 uint8_t mos6502::readByte_ZeroPageX()
 {
-	auto zp = fetchByte();
-	return getByte(lowByte(zp + X));
+	return getByte(lowByte(fetchByte()  + X));
 }
 
 uint8_t mos6502::readByte_ZeroPageY()
 {
-	auto zp = fetchByte();
-	return getByte(lowByte(zp + Y));
+	return getByte(lowByte(fetchByte() + Y));
 }
 
 uint8_t mos6502::readByte_AbsoluteX()
@@ -128,20 +113,17 @@ uint8_t mos6502::readByte_AbsoluteY()
 
 uint8_t mos6502::readByte_Absolute()
 {
-	auto address = fetchWord();
-	return getByte(address);
+	return getByte(fetchWord());
 }
 
 uint8_t mos6502::readByte_IndexedIndirectX()
 {
-	auto zp = fetchByte();
-	return getByte(getWord(lowByte(zp + X)));
+	return getByte(getWord(lowByte(fetchByte() + X)));
 }
 
 uint8_t mos6502::readByte_IndirectIndexedY()
 {
-	auto zp = fetchByte();
-	auto indirection = getWord(zp);
+	auto indirection = getWord(fetchByte());
 	if (lowByte(indirection) == 0xff)
 		cycles += 1;
 	return getByte(indirection + Y);
@@ -151,50 +133,42 @@ uint8_t mos6502::readByte_IndirectIndexedY()
 
 void mos6502::writeByte_ZeroPage(uint8_t value)
 {
-	auto zp = fetchByte();
-	setByte(zp, value);
+	setByte(fetchByte(), value);
 }
 
 void mos6502::writeByte_Absolute(uint8_t value)
 {
-	auto address = fetchWord();
-	setByte(address, value);
+	setByte(fetchWord(), value);
 }
 
 void mos6502::writeByte_IndexedIndirectX(uint8_t value)
 {
-	auto zp = fetchByte();
-	setByte(getWord(lowByte(zp + X)), value);
+	setByte(getWord(lowByte(fetchByte() + X)), value);
 }
 
 void mos6502::writeByte_IndirectIndexedY(uint8_t value)
 {
-	auto zp = fetchByte();
-	setByte(getWord(zp) + Y, value);
+	setByte(getWord(fetchByte()) + Y, value);
 }
 
 void mos6502::writeByte_ZeroPageX(uint8_t value)
 {
-	auto zp = fetchByte();
-	setByte(lowByte(zp + X), value);
+	setByte(lowByte(fetchByte() + X), value);
 }
 
 void mos6502::writeByte_ZeroPageY(uint8_t value)
 {
-	auto zp = fetchByte();
-	setByte(lowByte(zp + Y), value);
+	setByte(lowByte(fetchByte() + Y), value);
 }
 
 void mos6502::writeByte_AbsoluteX(uint8_t value)
 {
-	auto base = fetchWord();
-	setByte((uint16_t)(base + X), value);
+	setByte((uint16_t)(fetchWord() + X), value);
 }
 
 void mos6502::writeByte_AbsoluteY(uint8_t value)
 {
-	auto base = fetchWord();
-	setByte((uint16_t)(base + Y), value);
+	setByte((uint16_t)(fetchWord() + Y), value);
 }
 
 //
@@ -689,26 +663,22 @@ uint8_t mos6502::ROR(uint8_t data)
 
 void mos6502::ASL(uint16_t offset)
 {
-	auto contents = getByte(offset);
-	setByte(offset, ASL(contents));
+	setByte(offset, ASL(getByte(offset)));
 }
 
 void mos6502::ROL(uint16_t offset)
 {
-	auto contents = getByte(offset);
-	setByte(offset, ROL(contents));
+	setByte(offset, ROL(getByte(offset)));
 }
 
 void mos6502::LSR(uint16_t offset)
 {
-	auto contents = getByte(offset);
-	setByte(offset, LSR(contents));
+	setByte(offset, LSR(getByte(offset)));
 }
 
 void mos6502::ROR(uint16_t offset)
 {
-	auto contents = getByte(offset);
-	setByte(offset, ROR(contents));
+	setByte(offset, ROR(getByte(offset)));
 }
 
 void mos6502::BRK_imp()
@@ -727,14 +697,12 @@ void mos6502::RTI_imp()
 
 void mos6502::JMP_abs()
 {
-	auto address = fetchWord();
-	PC = address;
+	PC = fetchWord();
 }
 
 void mos6502::JMP_ind()
 {
-	auto address = fetchWord();
-	PC = getWord(address);
+	PC = getWord(fetchWord());
 }
 
 void mos6502::NOP_imp()
@@ -875,8 +843,7 @@ WRITER_GROUP_Y_DEFINITIONS(STY, Y)
 #define ACTION_ZP_DEFINITION(ACTION) \
 	void mos6502::ACTION ## _zp() \
 	{ \
-		auto zp = fetchByte(); \
-		ACTION((uint16_t)zp); \
+		ACTION((uint16_t)fetchByte()); \
 	}
 
 #define ACTION_IMP_DEFINITION(ACTION, REGISTER) \
@@ -888,22 +855,19 @@ WRITER_GROUP_Y_DEFINITIONS(STY, Y)
 #define ACTION_ABS_DEFINITION(ACTION) \
 	void mos6502::ACTION ## _abs() \
 	{ \
-		auto address = fetchWord(); \
-		ACTION(address); \
+		ACTION(fetchWord()); \
 	}
 
 #define ACTION_ZPX_DEFINITION(ACTION) \
 	void mos6502::ACTION ## _zpx() \
 	{ \
-		auto zp = fetchByte(); \
-		ACTION((uint16_t)(lowByte(zp + X))); \
+		ACTION((uint16_t)(lowByte(fetchByte() + X))); \
 	}
 
 #define ACTION_ABSX_DEFINITION(ACTION) \
 	void mos6502::ACTION ## _absx() \
 	{ \
-		auto address = fetchWord(); \
-		ACTION((uint16_t)(address + X)); \
+		ACTION((uint16_t)(fetchWord() + X)); \
 	}
 
 #define ROTATION_GROUP_DEFINITIONS(x) \
@@ -926,8 +890,6 @@ ROTATION_GROUP_DEFINITIONS(ROR);
 
 INCDEC_GROUP_A_DEFINITIONS(INC)
 INCDEC_GROUP_A_DEFINITIONS(DEC)
-
-//
 
 void mos6502::step()
 {
