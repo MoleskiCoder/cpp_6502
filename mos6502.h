@@ -81,6 +81,8 @@
 	ZPX_DECLARATION(x) \
 	ABSX_DECLARATION(x)
 
+#define INS(x) &mos6502:: x
+
 class mos6502
 {
 public:
@@ -120,6 +122,28 @@ public:
 
 private:
 
+	typedef void (mos6502::*instruction_t)();
+	std::vector<instruction_t> instructions =
+	{
+		//		0 				1				2				3				4				5				6				7				8				9				A				B				C				D				E				F
+		/* 0 */	INS(BRK_imp),	INS(ORA_xind),	INS(___),		INS(___),		INS(___),		INS(ORA_zp),	INS(ASL_zp),	INS(___),		INS(PHP_imp),	INS(ORA_imm),	INS(ASL_imp),	INS(___),		INS(___),		INS(ORA_abs),	INS(ASL_abs),	INS(___),
+		/* 1 */	INS(BPL_rel),	INS(ORA_indy),	INS(___),		INS(___),		INS(___),		INS(ORA_zpx),	INS(ASL_zpx),	INS(___),		INS(CLC_imp),	INS(ORA_absy),	INS(___),		INS(___),		INS(___),		INS(ORA_absx),	INS(ASL_absx),	INS(___),
+		/* 2 */	INS(JSR_abs),	INS(AND_xind),	INS(___),		INS(___),		INS(BIT_zp),	INS(AND_zp),	INS(ROL_zp),	INS(___),		INS(PLP_imp),	INS(AND_imm),	INS(ROL_imp),	INS(___),		INS(BIT_abs),	INS(AND_abs),	INS(ROL_abs),	INS(___),
+		/* 3 */	INS(BMI_rel),	INS(AND_indy),	INS(___),		INS(___),		INS(___),		INS(AND_zpx),	INS(ROL_zpx),	INS(___),		INS(SEC_imp),	INS(AND_absy),	INS(___),		INS(___),		INS(___),		INS(AND_absx),	INS(ROL_absx),	INS(___),
+		/* 4 */	INS(RTI_imp),	INS(EOR_xind),	INS(___),		INS(___),		INS(___),		INS(EOR_zp),	INS(LSR_zp),	INS(___),		INS(PHA_imp),	INS(EOR_imm),	INS(LSR_imp),	INS(___),		INS(JMP_abs),	INS(EOR_abs),	INS(LSR_abs),	INS(___),
+		/* 5 */	INS(BVC_rel),	INS(EOR_indy),	INS(___),		INS(___),		INS(___),		INS(EOR_zpx),	INS(LSR_zpx),	INS(___),		INS(CLI_imp),	INS(EOR_absy),	INS(___),		INS(___),		INS(___),		INS(EOR_absx),	INS(LSR_absx),	INS(___),
+		/* 6 */	INS(RTS_imp),	INS(ADC_xind),	INS(___),		INS(___),		INS(___),		INS(ADC_zp),	INS(ROR_zp),	INS(___),		INS(PLA_imp),	INS(ADC_imm),	INS(ROR_imp),	INS(___),		INS(JMP_ind),	INS(ADC_abs),	INS(ROR_abs),	INS(___),
+		/* 7 */	INS(BVS_rel),	INS(ADC_indy),	INS(___),		INS(___),		INS(___),		INS(ADC_zpx),	INS(ROR_zpx),	INS(___),		INS(SEI_imp),	INS(ADC_absy),	INS(___),		INS(___),		INS(___),		INS(ADC_absx),	INS(ROR_absx),	INS(___),
+		/* 8 */	INS(___),		INS(STA_xind),	INS(___),		INS(___),		INS(STY_zp),	INS(STA_zp),	INS(STX_zp),	INS(___),		INS(DEY_imp),	INS(___),		INS(TXA_imp),	INS(___),		INS(STY_abs),	INS(STA_abs),	INS(STX_abs),	INS(___),
+		/* 9 */	INS(BCC_rel),	INS(STA_indy),	INS(___),		INS(___),		INS(STY_zpx),	INS(STA_zpx),	INS(STX_zpy),	INS(___),		INS(TYA_imp),	INS(STA_absy),	INS(TXS_imp),	INS(___),		INS(___),		INS(STA_absx),	INS(___),		INS(___),
+		/* A */	INS(LDY_imm),	INS(LDA_xind),	INS(LDX_imm),	INS(___),		INS(LDY_zp),	INS(LDA_zp),	INS(LDX_zp),	INS(___),		INS(TAY_imp),	INS(LDA_imm),	INS(TAX_imp),	INS(___),		INS(LDY_abs),	INS(LDA_abs),	INS(LDX_abs),	INS(___),
+		/* B */	INS(BCS_rel),	INS(LDA_indy),	INS(___),		INS(___),		INS(LDY_zpx),	INS(LDA_zpx),	INS(LDX_zpy),	INS(___),		INS(CLV_imp),	INS(LDA_absy),	INS(TSX_imp),	INS(___),		INS(LDY_absx),	INS(LDA_absx),	INS(LDX_absy),	INS(___),
+		/* C */	INS(CPY_imm),	INS(CMP_xind),	INS(___),		INS(___),		INS(CPY_zp),	INS(CMP_zp),	INS(DEC_zp),	INS(___),		INS(INY_imp),	INS(CMP_imm),	INS(DEX_imp),	INS(___),		INS(CPY_abs),	INS(CMP_abs),	INS(DEC_abs),	INS(___),
+		/* D */	INS(BNE_rel),	INS(CMP_indy),	INS(___),		INS(___),		INS(___),		INS(CMP_zpx),	INS(DEC_zpx),	INS(___),		INS(CLD_imp),	INS(CMP_absy),	INS(___),		INS(___),		INS(___),		INS(CMP_absx),	INS(DEC_absx),	INS(___),
+		/* E */	INS(CPX_imm),	INS(SBC_xind),	INS(___),		INS(___),		INS(CPX_zp),	INS(SBC_zp),	INS(INC_zp),	INS(___),		INS(INX_imp),	INS(SBC_imm),	INS(NOP_imp),	INS(___),		INS(CPX_abs),	INS(SBC_abs),	INS(INC_abs),	INS(___),
+		/* F */	INS(BEQ_rel),	INS(SBC_indy),	INS(___),		INS(___),		INS(___),		INS(SBC_zpx),	INS(INC_zpx),	INS(___),		INS(SED_imp),	INS(SBC_absy),	INS(___),		INS(___),		INS(___),		INS(SBC_absx),	INS(INC_absx),	INS(___),
+	};
+
 	BRANCH_DECLARATION(BCS)
 	BRANCH_DECLARATION(BCC)
 
@@ -133,6 +157,10 @@ private:
 	BRANCH_DECLARATION(BVC)
 
 	void branch(int8_t displacement);
+
+	void ___();
+
+	void NOP_imp();
 
 	void CLV_imp();
 	void SEI_imp();
