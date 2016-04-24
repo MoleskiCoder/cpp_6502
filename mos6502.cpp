@@ -4,17 +4,11 @@
 #include <assert.h>
 
 mos6502::mos6502()
-:	memory(0x10000)
 {
 }
 
 mos6502::~mos6502()
 {
-}
-
-void mos6502::clearMemory()
-{
-	std::fill(memory.begin(), memory.end(), 0);
 }
 
 void mos6502::resetRegisters()
@@ -711,7 +705,6 @@ void mos6502::NOP_imp()
 
 void mos6502::___()
 {
-	assert(false && "Unknown instruction");
 }
 
 //
@@ -891,53 +884,33 @@ ROTATION_GROUP_DEFINITIONS(ROR);
 INCDEC_GROUP_A_DEFINITIONS(INC)
 INCDEC_GROUP_A_DEFINITIONS(DEC)
 
-void mos6502::step()
+void mos6502::start(uint16_t address)
 {
-	auto current = fetchByte();
+	PC = address;
+	run();
+}
 
-#ifdef _DEBUG
-	instructionCounts[current]++;
-#endif
+bool mos6502::step()
+{
+	return execute(fetchByte());
+}
 
-	auto details = instructions[current];
+bool mos6502::execute(uint8_t instruction)
+{
+	auto details = instructions[instruction];
 
 	(this->*details.first)();
 	cycles += details.second;
+
+	return true;
 }
 
 void mos6502::run()
 {
-#ifdef TEST_SUITE2
-	uint16_t oldPC = (uint16_t)-1;
-#endif
-
 	cycles = 0;
 	for (;;)
 	{
-#ifdef TEST_SUITE1
-		if (PC == 0x45c0)
-		{
-			auto test = getByte(0x0210);
-			if (test == 0xff)
-				printf("\n** success!!");
-			else
-				printf("\n** failed!!");
+		if (!step())
 			break;
-		}
-#endif
-
-#ifdef TEST_SUITE2
-		auto test = getByte(0x0200);
-		if (oldPC == PC)
-		{
-			printf("\n** PC=%04x: test=%02x: stopped!!", PC, test);
-			break;
-		}
-		else
-		{
-			oldPC = PC;
-		}
-#endif
-		step();
 	}
 }

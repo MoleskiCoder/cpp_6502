@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <map>
 
 #define FIRST_PAGE 0x100
 
@@ -89,13 +88,21 @@ public:
 	mos6502();
 	~mos6502();
 
-	void clearMemory();
+	void start(uint16_t address);
+
+	uint64_t getCycles() const
+	{
+		return cycles;
+	}
+
+protected:
+	virtual bool execute(uint8_t instruction);
+	virtual void ___();
+
 	void resetRegisters();
 
-	void run();
-	void step();
-
-	std::vector<uint8_t> memory;
+	virtual void run();
+	bool step();
 
 	uint64_t cycles;
 
@@ -156,8 +163,6 @@ private:
 	BRANCH_DECLARATION(BVC)
 
 	void branch(int8_t displacement);
-
-	void ___();
 
 	void NOP_imp();
 
@@ -255,16 +260,8 @@ private:
 
 	// get/set memory
 
-	uint8_t getByte(uint16_t offset)
-	{
-		return memory[offset];
-	}
-
-	void setByte(uint16_t offset, uint8_t value)
-	{
-		memory[offset] = value;
-	}
-
+	virtual uint8_t getByte(uint16_t offset) = 0;
+	virtual void setByte(uint16_t offset, uint8_t value) = 0;
 
 	uint16_t getWord(uint16_t offset);
 
@@ -355,8 +352,4 @@ private:
 	}
 
 	void pushStatus();
-
-#ifdef _DEBUG
-	std::map<uint8_t, int> instructionCounts;
-#endif
 };
