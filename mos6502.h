@@ -81,7 +81,7 @@
 	ZPX_DECLARATION(x) \
 	ABSX_DECLARATION(x)
 
-#define INS(x) &mos6502:: x
+#define INS(x, y) std::pair<instruction_t, unsigned>(&mos6502:: x, y)
 
 class mos6502
 {
@@ -123,25 +123,25 @@ public:
 private:
 
 	typedef void (mos6502::*instruction_t)();
-	std::vector<instruction_t> instructions =
+	std::vector<std::pair<instruction_t, unsigned>> instructions =
 	{
-		//		0 				1				2				3				4				5				6				7				8				9				A				B				C				D				E				F
-		/* 0 */	INS(BRK_imp),	INS(ORA_xind),	INS(___),		INS(___),		INS(___),		INS(ORA_zp),	INS(ASL_zp),	INS(___),		INS(PHP_imp),	INS(ORA_imm),	INS(ASL_imp),	INS(___),		INS(___),		INS(ORA_abs),	INS(ASL_abs),	INS(___),
-		/* 1 */	INS(BPL_rel),	INS(ORA_indy),	INS(___),		INS(___),		INS(___),		INS(ORA_zpx),	INS(ASL_zpx),	INS(___),		INS(CLC_imp),	INS(ORA_absy),	INS(___),		INS(___),		INS(___),		INS(ORA_absx),	INS(ASL_absx),	INS(___),
-		/* 2 */	INS(JSR_abs),	INS(AND_xind),	INS(___),		INS(___),		INS(BIT_zp),	INS(AND_zp),	INS(ROL_zp),	INS(___),		INS(PLP_imp),	INS(AND_imm),	INS(ROL_imp),	INS(___),		INS(BIT_abs),	INS(AND_abs),	INS(ROL_abs),	INS(___),
-		/* 3 */	INS(BMI_rel),	INS(AND_indy),	INS(___),		INS(___),		INS(___),		INS(AND_zpx),	INS(ROL_zpx),	INS(___),		INS(SEC_imp),	INS(AND_absy),	INS(___),		INS(___),		INS(___),		INS(AND_absx),	INS(ROL_absx),	INS(___),
-		/* 4 */	INS(RTI_imp),	INS(EOR_xind),	INS(___),		INS(___),		INS(___),		INS(EOR_zp),	INS(LSR_zp),	INS(___),		INS(PHA_imp),	INS(EOR_imm),	INS(LSR_imp),	INS(___),		INS(JMP_abs),	INS(EOR_abs),	INS(LSR_abs),	INS(___),
-		/* 5 */	INS(BVC_rel),	INS(EOR_indy),	INS(___),		INS(___),		INS(___),		INS(EOR_zpx),	INS(LSR_zpx),	INS(___),		INS(CLI_imp),	INS(EOR_absy),	INS(___),		INS(___),		INS(___),		INS(EOR_absx),	INS(LSR_absx),	INS(___),
-		/* 6 */	INS(RTS_imp),	INS(ADC_xind),	INS(___),		INS(___),		INS(___),		INS(ADC_zp),	INS(ROR_zp),	INS(___),		INS(PLA_imp),	INS(ADC_imm),	INS(ROR_imp),	INS(___),		INS(JMP_ind),	INS(ADC_abs),	INS(ROR_abs),	INS(___),
-		/* 7 */	INS(BVS_rel),	INS(ADC_indy),	INS(___),		INS(___),		INS(___),		INS(ADC_zpx),	INS(ROR_zpx),	INS(___),		INS(SEI_imp),	INS(ADC_absy),	INS(___),		INS(___),		INS(___),		INS(ADC_absx),	INS(ROR_absx),	INS(___),
-		/* 8 */	INS(___),		INS(STA_xind),	INS(___),		INS(___),		INS(STY_zp),	INS(STA_zp),	INS(STX_zp),	INS(___),		INS(DEY_imp),	INS(___),		INS(TXA_imp),	INS(___),		INS(STY_abs),	INS(STA_abs),	INS(STX_abs),	INS(___),
-		/* 9 */	INS(BCC_rel),	INS(STA_indy),	INS(___),		INS(___),		INS(STY_zpx),	INS(STA_zpx),	INS(STX_zpy),	INS(___),		INS(TYA_imp),	INS(STA_absy),	INS(TXS_imp),	INS(___),		INS(___),		INS(STA_absx),	INS(___),		INS(___),
-		/* A */	INS(LDY_imm),	INS(LDA_xind),	INS(LDX_imm),	INS(___),		INS(LDY_zp),	INS(LDA_zp),	INS(LDX_zp),	INS(___),		INS(TAY_imp),	INS(LDA_imm),	INS(TAX_imp),	INS(___),		INS(LDY_abs),	INS(LDA_abs),	INS(LDX_abs),	INS(___),
-		/* B */	INS(BCS_rel),	INS(LDA_indy),	INS(___),		INS(___),		INS(LDY_zpx),	INS(LDA_zpx),	INS(LDX_zpy),	INS(___),		INS(CLV_imp),	INS(LDA_absy),	INS(TSX_imp),	INS(___),		INS(LDY_absx),	INS(LDA_absx),	INS(LDX_absy),	INS(___),
-		/* C */	INS(CPY_imm),	INS(CMP_xind),	INS(___),		INS(___),		INS(CPY_zp),	INS(CMP_zp),	INS(DEC_zp),	INS(___),		INS(INY_imp),	INS(CMP_imm),	INS(DEX_imp),	INS(___),		INS(CPY_abs),	INS(CMP_abs),	INS(DEC_abs),	INS(___),
-		/* D */	INS(BNE_rel),	INS(CMP_indy),	INS(___),		INS(___),		INS(___),		INS(CMP_zpx),	INS(DEC_zpx),	INS(___),		INS(CLD_imp),	INS(CMP_absy),	INS(___),		INS(___),		INS(___),		INS(CMP_absx),	INS(DEC_absx),	INS(___),
-		/* E */	INS(CPX_imm),	INS(SBC_xind),	INS(___),		INS(___),		INS(CPX_zp),	INS(SBC_zp),	INS(INC_zp),	INS(___),		INS(INX_imp),	INS(SBC_imm),	INS(NOP_imp),	INS(___),		INS(CPX_abs),	INS(SBC_abs),	INS(INC_abs),	INS(___),
-		/* F */	INS(BEQ_rel),	INS(SBC_indy),	INS(___),		INS(___),		INS(___),		INS(SBC_zpx),	INS(INC_zpx),	INS(___),		INS(SED_imp),	INS(SBC_absy),	INS(___),		INS(___),		INS(___),		INS(SBC_absx),	INS(INC_absx),	INS(___),
+		//		0 					1					2					3					4					5					6					7					8					9					A					B					C					D					E					F
+		/* 0 */	INS(BRK_imp, 7),	INS(ORA_xind, 6),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ORA_zp, 4),		INS(ASL_zp, 5),		INS(___, 0),		INS(PHP_imp, 3),	INS(ORA_imm, 2),	INS(ASL_imp, 2),	INS(___, 0),		INS(___, 0),		INS(ORA_abs, 4),	INS(ASL_abs, 6),	INS(___, 0),
+		/* 1 */	INS(BPL_rel, 2),	INS(ORA_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ORA_zpx, 4),	INS(ASL_zpx, 6),	INS(___, 0),		INS(CLC_imp, 2),	INS(ORA_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ORA_absx, 4),	INS(ASL_absx, 7),	INS(___, 0),
+		/* 2 */	INS(JSR_abs, 6),	INS(AND_xind, 6),	INS(___, 0),		INS(___, 0),		INS(BIT_zp, 3),		INS(AND_zp, 3),		INS(ROL_zp, 5),		INS(___, 0),		INS(PLP_imp, 4),	INS(AND_imm, 2),	INS(ROL_imp, 2),	INS(___, 0),		INS(BIT_abs, 4),	INS(AND_abs, 4),	INS(ROL_abs, 6),	INS(___, 0),
+		/* 3 */	INS(BMI_rel, 2),	INS(AND_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(AND_zpx, 4),	INS(ROL_zpx, 6),	INS(___, 0),		INS(SEC_imp, 2),	INS(AND_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(AND_absx, 4),	INS(ROL_absx, 7),	INS(___, 0),
+		/* 4 */	INS(RTI_imp, 6),	INS(EOR_xind, 6),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(EOR_zp, 3),		INS(LSR_zp, 5),		INS(___, 0),		INS(PHA_imp, 3),	INS(EOR_imm, 2),	INS(LSR_imp, 2),	INS(___, 0),		INS(JMP_abs, 3),	INS(EOR_abs, 4),	INS(LSR_abs, 6),	INS(___, 0),
+		/* 5 */	INS(BVC_rel, 2),	INS(EOR_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(EOR_zpx, 4),	INS(LSR_zpx, 6),	INS(___, 0),		INS(CLI_imp, 2),	INS(EOR_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(EOR_absx, 4),	INS(LSR_absx, 7),	INS(___, 0),
+		/* 6 */	INS(RTS_imp, 6),	INS(ADC_xind, 6),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ADC_zp, 3),		INS(ROR_zp, 5),		INS(___, 0),		INS(PLA_imp, 4),	INS(ADC_imm, 2),	INS(ROR_imp, 2),	INS(___, 0),		INS(JMP_ind, 5),	INS(ADC_abs, 4),	INS(ROR_abs, 6),	INS(___, 0),
+		/* 7 */	INS(BVS_rel, 2),	INS(ADC_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ADC_zpx, 4),	INS(ROR_zpx, 6),	INS(___, 0),		INS(SEI_imp, 2),	INS(ADC_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ADC_absx, 4),	INS(ROR_absx, 7),	INS(___, 0),
+		/* 8 */	INS(___, 0),		INS(STA_xind, 6),	INS(___, 0),		INS(___, 0),		INS(STY_zp, 3),		INS(STA_zp, 3),		INS(STX_zp, 3),		INS(___, 0),		INS(DEY_imp, 2),	INS(___, 0),		INS(TXA_imp, 2),	INS(___, 0),		INS(STY_abs, 4),	INS(STA_abs, 4),	INS(STX_abs, 4),	INS(___, 0),
+		/* 9 */	INS(BCC_rel, 2),	INS(STA_indy, 6),	INS(___, 0),		INS(___, 0),		INS(STY_zpx, 4),	INS(STA_zpx, 4),	INS(STX_zpy, 4),	INS(___, 0),		INS(TYA_imp, 2),	INS(STA_absy, 5),	INS(TXS_imp, 2),	INS(___, 0),		INS(___, 0),		INS(STA_absx, 5),	INS(___, 0),		INS(___, 0),
+		/* A */	INS(LDY_imm, 2),	INS(LDA_xind, 6),	INS(LDX_imm, 2),	INS(___, 0),		INS(LDY_zp, 3),		INS(LDA_zp, 3),		INS(LDX_zp, 3),		INS(___, 0),		INS(TAY_imp, 2),	INS(LDA_imm, 2),	INS(TAX_imp, 2),	INS(___, 0),		INS(LDY_abs, 4),	INS(LDA_abs, 4),	INS(LDX_abs, 4),	INS(___, 0),
+		/* B */	INS(BCS_rel, 2),	INS(LDA_indy, 5),	INS(___, 0),		INS(___, 0),		INS(LDY_zpx, 4),	INS(LDA_zpx, 4),	INS(LDX_zpy, 4),	INS(___, 0),		INS(CLV_imp, 2),	INS(LDA_absy, 4),	INS(TSX_imp, 2),	INS(___, 0),		INS(LDY_absx, 4),	INS(LDA_absx, 4),	INS(LDX_absy, 4),	INS(___, 0),
+		/* C */	INS(CPY_imm, 2),	INS(CMP_xind, 6),	INS(___, 0),		INS(___, 0),		INS(CPY_zp, 3),		INS(CMP_zp, 3),		INS(DEC_zp, 5),		INS(___, 0),		INS(INY_imp, 2),	INS(CMP_imm, 2),	INS(DEX_imp, 2),	INS(___, 0),		INS(CPY_abs, 4),	INS(CMP_abs, 4),	INS(DEC_abs, 6),	INS(___, 0),
+		/* D */	INS(BNE_rel, 2),	INS(CMP_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(CMP_zpx, 4),	INS(DEC_zpx, 6),	INS(___, 0),		INS(CLD_imp, 2),	INS(CMP_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(CMP_absx, 4),	INS(DEC_absx, 7),	INS(___, 0),
+		/* E */	INS(CPX_imm, 2),	INS(SBC_xind, 6),	INS(___, 0),		INS(___, 0),		INS(CPX_zp, 3),		INS(SBC_zp, 3),		INS(INC_zp, 5),		INS(___, 0),		INS(INX_imp, 2),	INS(SBC_imm, 2),	INS(NOP_imp, 2),	INS(___, 0),		INS(CPX_abs, 4),	INS(SBC_abs, 4),	INS(INC_abs, 6),	INS(___, 0),
+		/* F */	INS(BEQ_rel, 2),	INS(SBC_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(SBC_zpx, 4),	INS(INC_zpx, 6),	INS(___, 0),		INS(SED_imp, 2),	INS(SBC_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(SBC_absx, 4),	INS(INC_absx, 7),	INS(___, 0),
 	};
 
 	BRANCH_DECLARATION(BCS)

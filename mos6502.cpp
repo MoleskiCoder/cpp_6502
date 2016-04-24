@@ -96,14 +96,12 @@ uint16_t mos6502::fetchWord_Indirect()
 uint8_t mos6502::readByte_Immediate()
 {
 	auto value = fetchByte();
-	cycles += 2;
 	return value;
 }
 
 uint8_t mos6502::readByte_ZeroPage()
 {
 	auto zp = fetchByte();
-	cycles += 3;
 	return getByte(zp);
 }
 
@@ -116,7 +114,6 @@ int8_t mos6502::readByte_ImmediateDisplacement()
 uint8_t mos6502::readByte_ZeroPageX()
 {
 	auto zp = fetchByte();
-	cycles += 4;
 	return getByte(lowByte(zp + X));
 }
 
@@ -128,7 +125,6 @@ uint8_t mos6502::readByte_ZeroPageY()
 
 uint8_t mos6502::readByte_AbsoluteX()
 {
-	cycles += 4;
 	auto base = fetchWord();
 	uint16_t offset = base + X;
 	if (lowByte(offset) == 0xff)
@@ -138,7 +134,6 @@ uint8_t mos6502::readByte_AbsoluteX()
 
 uint8_t mos6502::readByte_AbsoluteY()
 {
-	cycles += 4;
 	auto base = fetchWord();
 	uint16_t offset = base + Y;
 	if (lowByte(offset) == 0xff)
@@ -149,20 +144,17 @@ uint8_t mos6502::readByte_AbsoluteY()
 uint8_t mos6502::readByte_Absolute()
 {
 	auto address = fetchWord();
-	cycles += 4;
 	return getByte(address);
 }
 
 uint8_t mos6502::readByte_IndexedIndirectX()
 {
-	cycles += 6;
 	auto zp = fetchByte();
 	return getByte(getWord(lowByte(zp + X)));
 }
 
 uint8_t mos6502::readByte_IndirectIndexedY()
 {
-	cycles += 5;
 	auto zp = fetchByte();
 	auto indirection = getWord(zp);
 	if (lowByte(indirection) == 0xff)
@@ -176,56 +168,48 @@ void mos6502::writeByte_ZeroPage(uint8_t value)
 {
 	auto zp = fetchByte();
 	setByte(zp, value);
-	cycles += 3;
 }
 
 void mos6502::writeByte_Absolute(uint8_t value)
 {
 	auto address = fetchWord();
 	setByte(address, value);
-	cycles += 4;
 }
 
 void mos6502::writeByte_IndexedIndirectX(uint8_t value)
 {
 	auto zp = fetchByte();
 	setByte(getWord(lowByte(zp + X)), value);
-	cycles += 6;
 }
 
 void mos6502::writeByte_IndirectIndexedY(uint8_t value)
 {
 	auto zp = fetchByte();
 	setByte(getWord(zp) + Y, value);
-	cycles += 6;
 }
 
 void mos6502::writeByte_ZeroPageX(uint8_t value)
 {
 	auto zp = fetchByte();
 	setByte(lowByte(zp + X), value);
-	cycles += 4;
 }
 
 void mos6502::writeByte_ZeroPageY(uint8_t value)
 {
 	auto zp = fetchByte();
 	setByte(lowByte(zp + Y), value);
-	cycles += 4;
 }
 
 void mos6502::writeByte_AbsoluteX(uint8_t value)
 {
 	auto base = fetchWord();
 	setByte((uint16_t)(base + X), value);
-	cycles += 5;
 }
 
 void mos6502::writeByte_AbsoluteY(uint8_t value)
 {
 	auto base = fetchWord();
 	setByte((uint16_t)(base + Y), value);
-	cycles += 5;
 }
 
 //
@@ -287,20 +271,16 @@ void mos6502::BIT(uint8_t data)
 		P |= F_N;
 	if (data & 0x40)
 		P |= F_V;
-
-	cycles += 2;
 }
 
 void mos6502::BIT_zp()
 {
 	BIT(readByte_ZeroPage());
-	cycles++;
 }
 
 void mos6502::BIT_abs()
 {
 	BIT(readByte_Absolute());
-	cycles += 2;
 }
 
 void mos6502::CPX(uint8_t data)
@@ -487,7 +467,6 @@ void mos6502::LDX(uint8_t data)
 #define BRANCH_DEFINITION_S(ins, flag) \
 	void mos6502:: ins (int8_t displacement) \
 	{ \
-		cycles += 2; \
 		if (P & flag) \
 			branch(displacement); \
 	}
@@ -495,7 +474,6 @@ void mos6502::LDX(uint8_t data)
 #define BRANCH_DEFINITION_C(ins, flag) \
 	void mos6502:: ins (int8_t displacement) \
 	{ \
-		cycles += 2; \
 		if ((!(P & flag))) \
 			branch(displacement); \
 	}
@@ -527,16 +505,16 @@ void mos6502::branch(int8_t displacement)
 		cycles += 2;
 }
 
-void mos6502::SED_imp() { cycles += 2;	P |= F_D;	}
-void mos6502::CLD_imp() { cycles += 2;	P &= ~F_D;	}
+void mos6502::SED_imp() { P |= F_D;		}
+void mos6502::CLD_imp() { P &= ~F_D;	}
 
-void mos6502::SEI_imp() { cycles += 2;	P |= F_I;	}
-void mos6502::CLI_imp() { cycles += 2;	P &= ~F_I;	}
+void mos6502::SEI_imp() { P |= F_I;		}
+void mos6502::CLI_imp() { P &= ~F_I;	}
 
-void mos6502::CLV_imp() { cycles += 2;	P &= ~F_V;	}
+void mos6502::CLV_imp() { P &= ~F_V;	}
 
-void mos6502::SEC_imp() { cycles += 2;	P |= F_C;	}
-void mos6502::CLC_imp() { cycles += 2;	P &= ~F_C;	}
+void mos6502::SEC_imp() { P |= F_C;		}
+void mos6502::CLC_imp() { P &= ~F_C;	}
 
 //
 
@@ -550,13 +528,11 @@ void mos6502::DEC(uint16_t offset)
 void mos6502::DEX_imp()
 {
 	reflectFlags_ZeroNegative(--X);
-	cycles += 2;
 }
 
 void mos6502::DEY_imp()
 {
 	reflectFlags_ZeroNegative(--Y);
-	cycles += 2;
 }
 
 void mos6502::INC(uint16_t offset)
@@ -569,13 +545,11 @@ void mos6502::INC(uint16_t offset)
 void mos6502::INX_imp()
 {
 	reflectFlags_ZeroNegative(++X);
-	cycles += 2;
 }
 
 void mos6502::INY_imp()
 {
 	reflectFlags_ZeroNegative(++Y);
-	cycles += 2;
 }
 
 void mos6502::JSR_abs()
@@ -583,32 +557,27 @@ void mos6502::JSR_abs()
 	auto destination = fetchWord();
 	pushWord(PC - 1);
 	PC = destination;
-	cycles += 6;
 }
 
 void mos6502::RTS_imp()
 {
 	PC = popWord() + 1;
-	cycles += 6;
 }
 
 void mos6502::PHA_imp()
 {
 	pushByte(A);
-	cycles += 3;
 }
 
 void mos6502::PLA_imp()
 {
 	A = popByte();
 	reflectFlags_ZeroNegative(A);
-	cycles += 4;
 }
 
 void mos6502::PHP_imp()
 {
 	pushStatus();
-	cycles += 3;
 }
 
 void mos6502::pushStatus()
@@ -620,48 +589,41 @@ void mos6502::pushStatus()
 void mos6502::PLP_imp()
 {
 	P = popByte();
-	cycles += 4;
 }
 
 void mos6502::TXS_imp()
 {
 	S = X;
-	cycles += 2;
 }
 
 void mos6502::TSX_imp()
 {
 	X = S;
 	reflectFlags_ZeroNegative(X);
-	cycles += 2;
 }
 
 void mos6502::TAX_imp()
 {
 	X = A;
 	reflectFlags_ZeroNegative(X);
-	cycles += 2;
 }
 
 void mos6502::TXA_imp()
 {
 	A = X;
 	reflectFlags_ZeroNegative(A);
-	cycles += 2;
 }
 
 void mos6502::TAY_imp()
 {
 	Y = A;
 	reflectFlags_ZeroNegative(Y);
-	cycles += 2;
 }
 
 void mos6502::TYA_imp()
 {
 	A = Y;
 	reflectFlags_ZeroNegative(A);
-	cycles += 2;
 }
 
 uint8_t mos6502::ASL(uint8_t data)
@@ -770,28 +732,24 @@ void mos6502::BRK_imp()
 	pushStatus();
 	P |= F_I;
 	PC = getWord(0xfffe);
-	cycles += 7;
 }
 
 void mos6502::RTI_imp()
 {
 	P = popByte();
 	PC = popWord();
-	cycles += 6;
 }
 
 void mos6502::JMP_abs()
 {
 	auto address = fetchWord();
 	PC = address;
-	cycles += 3;
 }
 
 void mos6502::JMP_ind()
 {
 	auto address = fetchWord();
 	PC = getWord(address);
-	cycles += 5;
 }
 
 void mos6502::NOP_imp()
@@ -994,7 +952,10 @@ void mos6502::step()
 	instructionCounts[current]++;
 #endif
 
-	(this->*instructions[current])();
+	auto details = instructions[current];
+
+	(this->*details.first)();
+	cycles += details.second;
 }
 
 void mos6502::run()
