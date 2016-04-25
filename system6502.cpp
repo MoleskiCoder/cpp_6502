@@ -102,10 +102,13 @@ void system6502::poll()
 #ifdef EHBASIC
 void system6502::pollInput()
 {
-	if (_kbhit())
+	if (cycles % pollInterval == 0)
 	{
-		auto key = _getch();
-		setByte(input, (uint8_t)key);
+		if (_kbhit())
+		{
+			auto key = _getch();
+			setByte(input, (uint8_t)key);
+		}
 	}
 }
 #endif

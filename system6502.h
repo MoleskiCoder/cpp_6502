@@ -30,6 +30,7 @@ private:
 	void poll();
 #ifdef EHBASIC
 	void pollInput();
+	unsigned pollInterval = 10000;
 #endif
 };
 
