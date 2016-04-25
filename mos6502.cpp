@@ -351,7 +351,7 @@ void mos6502::SBC_d(uint8_t data)
 
 	uint8_t high = (A >> 4) - (data >> 4) - (int8_t(low) < 0);
 
-	updateFlags_ZeroNegative(difference);
+	updateFlags_ZeroNegative((uint8_t)difference);
 
 	if ((A ^ data) & (A ^ difference) & 0x80)
 		P |= F_V;
