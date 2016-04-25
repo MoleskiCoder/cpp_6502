@@ -75,39 +75,37 @@ void system6502::loadRom(std::string path, size_t offset)
 
 uint8_t system6502::getByte(uint16_t offset)
 {
-	return memory[offset];
+	auto byte = memory[offset];
+#ifdef EHBASIC
+	if (offset == input)
+		memory[offset] = 0x0;
+#endif
+	return byte;
 }
 
 void system6502::setByte(uint16_t offset, uint8_t value)
 {
 	memory[offset] = value;
+#ifdef EHBASIC
+	if (offset == output)
+		printf("%c", value);
+#endif
 }
 
 void system6502::poll()
 {
 #ifdef EHBASIC
 	pollInput();
-	pollOutput();
 #endif
 }
 
+#ifdef EHBASIC
 void system6502::pollInput()
 {
-	setByte(input, 0x0);
-	static uint64_t interval = 0;
-	if (++interval % 1000000 == 0)
+	if (_kbhit())
 	{
-		if (_kbhit())
-		{
-			auto key = _getch();
-			setByte(input, (uint8_t)key);
-		}
+		auto key = _getch();
+		setByte(input, (uint8_t)key);
 	}
 }
-
-void system6502::pollOutput()
-{
-	auto character = getByte(output);
-	if (character != 0x0)
-		printf("%c", character);
-}
+#endif

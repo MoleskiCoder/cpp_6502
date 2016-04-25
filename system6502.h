@@ -24,11 +24,12 @@ private:
 	std::vector<uint8_t> memory;
 	std::map<uint8_t, int> instructionCounts;
 
-	uint16_t input = 0xF001;
-	uint16_t output = 0xF004;
+	uint16_t input = 0xF004;
+	uint16_t output = 0xF001;
 
 	void poll();
+#ifdef EHBASIC
 	void pollInput();
-	void pollOutput();
+#endif
 };
 

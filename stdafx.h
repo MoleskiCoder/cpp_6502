@@ -7,5 +7,5 @@
 #include <vector>
 
 //#define TEST_SUITE1
-#define TEST_SUITE2
-//#define EHBASIC
+//#define TEST_SUITE2
+#define EHBASIC
