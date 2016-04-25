@@ -859,10 +859,33 @@ bool mos6502::step()
 
 bool mos6502::execute(uint8_t instruction)
 {
+#ifdef _DEBUG
+	printf("\n");
+	printf("PC=%04x:", PC);
+	printf("P=%02x, A=%02x, X=%02x, Y=%02x, S=%02x	", P, A, X, Y, S);
+#endif
+
+	DUMP_BYTEVALUE(instruction);
+
 	auto details = instructions[instruction];
 
-	(this->*details.first)();
-	cycles += details.second;
+	auto method = details.vector;
+	auto count = details.count;
+
+#ifdef _DEBUG
+	auto mode = details.mode;
+	auto mnemomic = details.display;
+
+	auto dumper = addressingMode_Dumper[mode];
+
+	(this->*(dumper.first))();
+
+	printf("	%s ", mnemomic.c_str());
+	(this->*(dumper.second))();
+#endif
+
+	(this->*method)();
+	cycles += count;
 
 	return true;
 }

@@ -1,6 +1,21 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
+
+#ifdef _DEBUG
+
+#	define DUMP_BYTEVALUE(x)		printf("%02x", x)
+#	define DUMP_BYTE(x)				DUMP_BYTEVALUE(getByte(x))
+#	define DUMP_DBYTE(x)			DUMP_BYTE(x), DUMP_BYTE(x + 1);
+
+#else
+
+#	define DUMP_BYTEVALUE(x)
+#	define DUMP_BYTE(x)
+#	define DUMP_DBYTE(x)
+
+#endif
 
 #define FIRST_PAGE 0x100
 
@@ -80,7 +95,8 @@
 	ZPX_DECLARATION(x) \
 	ABSX_DECLARATION(x)
 
-#define INS(x, y) std::pair<instruction_t, unsigned>(&mos6502:: x, y)
+#define INS(INS, MODE, CYCLES) \
+	{ &mos6502:: INS ## _ ## MODE, CYCLES, MODE, #INS}
 
 class mos6502
 {
@@ -136,25 +152,87 @@ private:
 	const uint16_t nmi_vector = 0xfffa;
 
 	typedef void (mos6502::*instruction_t)();
-	std::vector<std::pair<instruction_t, unsigned>> instructions =
+
+	enum addressing_mode
+	{
+		_,
+		imp, imm,
+		rel,
+		xind, indy,
+		zp, zpx, zpy,
+		abs, absx, absy,
+		ind
+	};
+
+	void dump_nothing()	{					}
+
+	void dump_byte()	{ DUMP_BYTE(PC);	}
+	void dump_dbyte()	{ DUMP_DBYTE(PC);	}
+
+	void dump_a()		{ printf("A");						}
+	void dump_imm()		{ printf("#%02x", getByte(PC));		}
+	void dump_abs()		{ printf("$%04x", getWord(PC));		}
+	void dump_zp()		{ printf("$%02x", getByte(PC));		}
+	void dump_zpx()		{ printf("$%02x,X", getByte(PC));	}
+	void dump_zpy()		{ printf("$%02x,Y", getByte(PC));	}
+	void dump_absx()	{ printf("$%04x,X", getWord(PC));	}
+	void dump_absy()	{ printf("$%04x,Y", getWord(PC));	}
+	void dump_xind()	{ printf("($%02x,X)", getByte(PC));	}
+	void dump_indy()	{ printf("($%02x),Y", getByte(PC));	}
+	void dump_ind()		{ printf("($%04x)", getWord(PC));	}
+
+	void dump_rel()
+	{
+#ifdef _DEBUG
+		auto displacement = getByte(PC);
+		auto destination = PC + displacement;
+		printf("$%04x", destination);
+#endif
+	}
+
+	std::unordered_map<addressing_mode, std::pair<instruction_t, instruction_t>> addressingMode_Dumper =
+	{
+		{ imp,	std::pair<instruction_t, instruction_t>(&mos6502::dump_nothing, &mos6502::dump_nothing)	},
+		{ xind,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_xind)	},
+		{ zp,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_zp)		},
+		{ imm,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_imm)		},
+		{ abs,	std::pair<instruction_t, instruction_t>(&mos6502::dump_dbyte,	&mos6502::dump_abs)		},
+		{ indy,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_indy)	},
+		{ zpx,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_zpx)		},
+		{ zpy,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_zpy)		},
+		{ absx,	std::pair<instruction_t, instruction_t>(&mos6502::dump_dbyte,	&mos6502::dump_absx)	},
+		{ absy,	std::pair<instruction_t, instruction_t>(&mos6502::dump_dbyte,	&mos6502::dump_absy)	},
+		{ rel,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_rel)		},
+		{ ind,	std::pair<instruction_t, instruction_t>(&mos6502::dump_dbyte,	&mos6502::dump_ind)		},
+	};
+
+	struct instruction
+	{
+		instruction_t vector;
+		unsigned count;
+		addressing_mode mode;
+		std::string display;
+	};
+
+	std::vector<instruction> instructions =
 	{
 		//		0 					1					2					3					4					5					6					7					8					9					A					B					C					D					E					F
-		/* 0 */	INS(BRK_imp, 7),	INS(ORA_xind, 6),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ORA_zp, 4),		INS(ASL_zp, 5),		INS(___, 0),		INS(PHP_imp, 3),	INS(ORA_imm, 2),	INS(ASL_imp, 2),	INS(___, 0),		INS(___, 0),		INS(ORA_abs, 4),	INS(ASL_abs, 6),	INS(___, 0),
-		/* 1 */	INS(BPL_rel, 2),	INS(ORA_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ORA_zpx, 4),	INS(ASL_zpx, 6),	INS(___, 0),		INS(CLC_imp, 2),	INS(ORA_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ORA_absx, 4),	INS(ASL_absx, 7),	INS(___, 0),
-		/* 2 */	INS(JSR_abs, 6),	INS(AND_xind, 6),	INS(___, 0),		INS(___, 0),		INS(BIT_zp, 3),		INS(AND_zp, 3),		INS(ROL_zp, 5),		INS(___, 0),		INS(PLP_imp, 4),	INS(AND_imm, 2),	INS(ROL_imp, 2),	INS(___, 0),		INS(BIT_abs, 4),	INS(AND_abs, 4),	INS(ROL_abs, 6),	INS(___, 0),
-		/* 3 */	INS(BMI_rel, 2),	INS(AND_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(AND_zpx, 4),	INS(ROL_zpx, 6),	INS(___, 0),		INS(SEC_imp, 2),	INS(AND_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(AND_absx, 4),	INS(ROL_absx, 7),	INS(___, 0),
-		/* 4 */	INS(RTI_imp, 6),	INS(EOR_xind, 6),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(EOR_zp, 3),		INS(LSR_zp, 5),		INS(___, 0),		INS(PHA_imp, 3),	INS(EOR_imm, 2),	INS(LSR_imp, 2),	INS(___, 0),		INS(JMP_abs, 3),	INS(EOR_abs, 4),	INS(LSR_abs, 6),	INS(___, 0),
-		/* 5 */	INS(BVC_rel, 2),	INS(EOR_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(EOR_zpx, 4),	INS(LSR_zpx, 6),	INS(___, 0),		INS(CLI_imp, 2),	INS(EOR_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(EOR_absx, 4),	INS(LSR_absx, 7),	INS(___, 0),
-		/* 6 */	INS(RTS_imp, 6),	INS(ADC_xind, 6),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ADC_zp, 3),		INS(ROR_zp, 5),		INS(___, 0),		INS(PLA_imp, 4),	INS(ADC_imm, 2),	INS(ROR_imp, 2),	INS(___, 0),		INS(JMP_ind, 5),	INS(ADC_abs, 4),	INS(ROR_abs, 6),	INS(___, 0),
-		/* 7 */	INS(BVS_rel, 2),	INS(ADC_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ADC_zpx, 4),	INS(ROR_zpx, 6),	INS(___, 0),		INS(SEI_imp, 2),	INS(ADC_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(ADC_absx, 4),	INS(ROR_absx, 7),	INS(___, 0),
-		/* 8 */	INS(___, 0),		INS(STA_xind, 6),	INS(___, 0),		INS(___, 0),		INS(STY_zp, 3),		INS(STA_zp, 3),		INS(STX_zp, 3),		INS(___, 0),		INS(DEY_imp, 2),	INS(___, 0),		INS(TXA_imp, 2),	INS(___, 0),		INS(STY_abs, 4),	INS(STA_abs, 4),	INS(STX_abs, 4),	INS(___, 0),
-		/* 9 */	INS(BCC_rel, 2),	INS(STA_indy, 6),	INS(___, 0),		INS(___, 0),		INS(STY_zpx, 4),	INS(STA_zpx, 4),	INS(STX_zpy, 4),	INS(___, 0),		INS(TYA_imp, 2),	INS(STA_absy, 5),	INS(TXS_imp, 2),	INS(___, 0),		INS(___, 0),		INS(STA_absx, 5),	INS(___, 0),		INS(___, 0),
-		/* A */	INS(LDY_imm, 2),	INS(LDA_xind, 6),	INS(LDX_imm, 2),	INS(___, 0),		INS(LDY_zp, 3),		INS(LDA_zp, 3),		INS(LDX_zp, 3),		INS(___, 0),		INS(TAY_imp, 2),	INS(LDA_imm, 2),	INS(TAX_imp, 2),	INS(___, 0),		INS(LDY_abs, 4),	INS(LDA_abs, 4),	INS(LDX_abs, 4),	INS(___, 0),
-		/* B */	INS(BCS_rel, 2),	INS(LDA_indy, 5),	INS(___, 0),		INS(___, 0),		INS(LDY_zpx, 4),	INS(LDA_zpx, 4),	INS(LDX_zpy, 4),	INS(___, 0),		INS(CLV_imp, 2),	INS(LDA_absy, 4),	INS(TSX_imp, 2),	INS(___, 0),		INS(LDY_absx, 4),	INS(LDA_absx, 4),	INS(LDX_absy, 4),	INS(___, 0),
-		/* C */	INS(CPY_imm, 2),	INS(CMP_xind, 6),	INS(___, 0),		INS(___, 0),		INS(CPY_zp, 3),		INS(CMP_zp, 3),		INS(DEC_zp, 5),		INS(___, 0),		INS(INY_imp, 2),	INS(CMP_imm, 2),	INS(DEX_imp, 2),	INS(___, 0),		INS(CPY_abs, 4),	INS(CMP_abs, 4),	INS(DEC_abs, 6),	INS(___, 0),
-		/* D */	INS(BNE_rel, 2),	INS(CMP_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(CMP_zpx, 4),	INS(DEC_zpx, 6),	INS(___, 0),		INS(CLD_imp, 2),	INS(CMP_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(CMP_absx, 4),	INS(DEC_absx, 7),	INS(___, 0),
-		/* E */	INS(CPX_imm, 2),	INS(SBC_xind, 6),	INS(___, 0),		INS(___, 0),		INS(CPX_zp, 3),		INS(SBC_zp, 3),		INS(INC_zp, 5),		INS(___, 0),		INS(INX_imp, 2),	INS(SBC_imm, 2),	INS(NOP_imp, 2),	INS(___, 0),		INS(CPX_abs, 4),	INS(SBC_abs, 4),	INS(INC_abs, 6),	INS(___, 0),
-		/* F */	INS(BEQ_rel, 2),	INS(SBC_indy, 5),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(SBC_zpx, 4),	INS(INC_zpx, 6),	INS(___, 0),		INS(SED_imp, 2),	INS(SBC_absy, 4),	INS(___, 0),		INS(___, 0),		INS(___, 0),		INS(SBC_absx, 4),	INS(INC_absx, 7),	INS(___, 0),
+		/* 0 */	INS(BRK,imp, 7),	INS(ORA,xind, 6),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(ORA,zp, 4),		INS(ASL,zp, 5),		INS(_,_, 0),		INS(PHP,imp, 3),	INS(ORA,imm, 2),	INS(ASL,imp, 2),	INS(_,_, 0),		INS(_,_, 0),		INS(ORA,abs, 4),	INS(ASL,abs, 6),	INS(_,_, 0),
+		/* 1 */	INS(BPL,rel, 2),	INS(ORA,indy, 5),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(ORA,zpx, 4),	INS(ASL,zpx, 6),	INS(_,_, 0),		INS(CLC,imp, 2),	INS(ORA,absy, 4),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(ORA,absx, 4),	INS(ASL,absx, 7),	INS(_,_, 0),
+		/* 2 */	INS(JSR,abs, 6),	INS(AND,xind, 6),	INS(_,_, 0),		INS(_,_, 0),		INS(BIT,zp, 3),		INS(AND,zp, 3),		INS(ROL,zp, 5),		INS(_,_, 0),		INS(PLP,imp, 4),	INS(AND,imm, 2),	INS(ROL,imp, 2),	INS(_,_, 0),		INS(BIT,abs, 4),	INS(AND,abs, 4),	INS(ROL,abs, 6),	INS(_,_, 0),
+		/* 3 */	INS(BMI,rel, 2),	INS(AND,indy, 5),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(AND,zpx, 4),	INS(ROL,zpx, 6),	INS(_,_, 0),		INS(SEC,imp, 2),	INS(AND,absy, 4),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(AND,absx, 4),	INS(ROL,absx, 7),	INS(_,_, 0),
+		/* 4 */	INS(RTI,imp, 6),	INS(EOR,xind, 6),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(EOR,zp, 3),		INS(LSR,zp, 5),		INS(_,_, 0),		INS(PHA,imp, 3),	INS(EOR,imm, 2),	INS(LSR,imp, 2),	INS(_,_, 0),		INS(JMP,abs, 3),	INS(EOR,abs, 4),	INS(LSR,abs, 6),	INS(_,_, 0),
+		/* 5 */	INS(BVC,rel, 2),	INS(EOR,indy, 5),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(EOR,zpx, 4),	INS(LSR,zpx, 6),	INS(_,_, 0),		INS(CLI,imp, 2),	INS(EOR,absy, 4),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(EOR,absx, 4),	INS(LSR,absx, 7),	INS(_,_, 0),
+		/* 6 */	INS(RTS,imp, 6),	INS(ADC,xind, 6),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(ADC,zp, 3),		INS(ROR,zp, 5),		INS(_,_, 0),		INS(PLA,imp, 4),	INS(ADC,imm, 2),	INS(ROR,imp, 2),	INS(_,_, 0),		INS(JMP,ind, 5),	INS(ADC,abs, 4),	INS(ROR,abs, 6),	INS(_,_, 0),
+		/* 7 */	INS(BVS,rel, 2),	INS(ADC,indy, 5),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(ADC,zpx, 4),	INS(ROR,zpx, 6),	INS(_,_, 0),		INS(SEI,imp, 2),	INS(ADC,absy, 4),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(ADC,absx, 4),	INS(ROR,absx, 7),	INS(_,_, 0),
+		/* 8 */	INS(_,_, 0),		INS(STA,xind, 6),	INS(_,_, 0),		INS(_,_, 0),		INS(STY,zp, 3),		INS(STA,zp, 3),		INS(STX,zp, 3),		INS(_,_, 0),		INS(DEY,imp, 2),	INS(_,_, 0),		INS(TXA,imp, 2),	INS(_,_, 0),		INS(STY,abs, 4),	INS(STA,abs, 4),	INS(STX,abs, 4),	INS(_,_, 0),
+		/* 9 */	INS(BCC,rel, 2),	INS(STA,indy, 6),	INS(_,_, 0),		INS(_,_, 0),		INS(STY,zpx, 4),	INS(STA,zpx, 4),	INS(STX,zpy, 4),	INS(_,_, 0),		INS(TYA,imp, 2),	INS(STA,absy, 5),	INS(TXS,imp, 2),	INS(_,_, 0),		INS(_,_, 0),		INS(STA,absx, 5),	INS(_,_, 0),		INS(_,_, 0),
+		/* A */	INS(LDY,imm, 2),	INS(LDA,xind, 6),	INS(LDX,imm, 2),	INS(_,_, 0),		INS(LDY,zp, 3),		INS(LDA,zp, 3),		INS(LDX,zp, 3),		INS(_,_, 0),		INS(TAY,imp, 2),	INS(LDA,imm, 2),	INS(TAX,imp, 2),	INS(_,_, 0),		INS(LDY,abs, 4),	INS(LDA,abs, 4),	INS(LDX,abs, 4),	INS(_,_, 0),
+		/* B */	INS(BCS,rel, 2),	INS(LDA,indy, 5),	INS(_,_, 0),		INS(_,_, 0),		INS(LDY,zpx, 4),	INS(LDA,zpx, 4),	INS(LDX,zpy, 4),	INS(_,_, 0),		INS(CLV,imp, 2),	INS(LDA,absy, 4),	INS(TSX,imp, 2),	INS(_,_, 0),		INS(LDY,absx, 4),	INS(LDA,absx, 4),	INS(LDX,absy, 4),	INS(_,_, 0),
+		/* C */	INS(CPY,imm, 2),	INS(CMP,xind, 6),	INS(_,_, 0),		INS(_,_, 0),		INS(CPY,zp, 3),		INS(CMP,zp, 3),		INS(DEC,zp, 5),		INS(_,_, 0),		INS(INY,imp, 2),	INS(CMP,imm, 2),	INS(DEX,imp, 2),	INS(_,_, 0),		INS(CPY,abs, 4),	INS(CMP,abs, 4),	INS(DEC,abs, 6),	INS(_,_, 0),
+		/* D */	INS(BNE,rel, 2),	INS(CMP,indy, 5),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(CMP,zpx, 4),	INS(DEC,zpx, 6),	INS(_,_, 0),		INS(CLD,imp, 2),	INS(CMP,absy, 4),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(CMP,absx, 4),	INS(DEC,absx, 7),	INS(_,_, 0),
+		/* E */	INS(CPX,imm, 2),	INS(SBC,xind, 6),	INS(_,_, 0),		INS(_,_, 0),		INS(CPX,zp, 3),		INS(SBC,zp, 3),		INS(INC,zp, 5),		INS(_,_, 0),		INS(INX,imp, 2),	INS(SBC,imm, 2),	INS(NOP,imp, 2),	INS(_,_, 0),		INS(CPX,abs, 4),	INS(SBC,abs, 4),	INS(INC,abs, 6),	INS(_,_, 0),
+		/* F */	INS(BEQ,rel, 2),	INS(SBC,indy, 5),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(SBC,zpx, 4),	INS(INC,zpx, 6),	INS(_,_, 0),		INS(SED,imp, 2),	INS(SBC,absy, 4),	INS(_,_, 0),		INS(_,_, 0),		INS(_,_, 0),		INS(SBC,absx, 4),	INS(INC,absx, 7),	INS(_,_, 0),
 	};
 
 	BRANCH_DECLARATION(BCS)
