@@ -855,17 +855,16 @@ void mos6502::start(uint16_t address)
 
 bool mos6502::step()
 {
+#ifdef _DEBUG
+	printf("\nPC=%04x:", PC);
+	printf("P=%02x, A=%02x, X=%02x, Y=%02x, S=%02x	", P, A, X, Y, S);
+#endif
+
 	return execute(fetchByte());
 }
 
 bool mos6502::execute(uint8_t instruction)
 {
-#ifdef _DEBUG
-	printf("\n");
-	printf("PC=%04x:", PC);
-	printf("P=%02x, A=%02x, X=%02x, Y=%02x, S=%02x	", P, A, X, Y, S);
-#endif
-
 	DUMP_BYTEVALUE(instruction);
 
 	auto details = instructions[instruction];

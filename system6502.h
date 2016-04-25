@@ -14,6 +14,7 @@ public:
 protected:
 	void clearMemory();
 
+	virtual bool step();
 	virtual bool execute(uint8_t instruction);
 
 	virtual uint8_t getByte(uint16_t offset);

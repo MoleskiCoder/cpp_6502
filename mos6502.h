@@ -123,7 +123,7 @@ protected:
 
 	void resetRegisters();
 
-	bool step();
+	virtual bool step();
 
 	uint64_t cycles;
 

@@ -13,10 +13,8 @@ system6502::~system6502()
 {
 }
 
-bool system6502::execute(uint8_t instruction)
+bool system6502::step()
 {
-	poll();
-
 #ifdef TEST_SUITE1
 	if (PC == 0x45c0)
 	{
@@ -42,6 +40,13 @@ bool system6502::execute(uint8_t instruction)
 	}
 #endif
 
+	poll();
+
+	return __super::step();
+}
+
+bool system6502::execute(uint8_t instruction)
+{
 	instructionCounts[instruction]++;
 	return __super::execute(instruction);
 }
