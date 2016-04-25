@@ -17,7 +17,7 @@ void mos6502::resetRegisters()
 	X = 0x80;
 	Y = 0x00;
 	A = 0x00;
-	P = 0x36;
+	P = F_reserved;
 	S = 0xff;
 }
 
@@ -486,18 +486,13 @@ void mos6502::PLA_imp()
 
 void mos6502::PHP_imp()
 {
-	pushStatus();
-}
-
-void mos6502::pushStatus()
-{
-	P |= (F_B | F_reserved);
+	P |= F_B;
 	pushByte(P);
 }
 
 void mos6502::PLP_imp()
 {
-	P = popByte();
+	P = popByte() | F_reserved;
 }
 
 void mos6502::TXS_imp()
@@ -619,17 +614,40 @@ void mos6502::ROR(uint16_t offset)
 	setByte(offset, ROR(getByte(offset)));
 }
 
+void mos6502::reset()
+{
+	PC = getWord(reset_vector);
+	run();
+}
+
+void mos6502::nmi()
+{
+	pushWord(PC);
+	pushByte(P);
+	P |= F_I;
+	PC = getWord(nmi_vector);
+}
+
+void mos6502::irq()
+{
+	pushWord(PC);
+	pushByte(P);
+	P |= F_I;
+	PC = getWord(irq_vector);
+}
+
+
 void mos6502::BRK_imp()
 {
 	pushWord(PC + 1);
-	pushStatus();
+	PHP_imp();
 	P |= F_I;
-	PC = getWord(0xfffe);
+	PC = getWord(irq_vector);
 }
 
 void mos6502::RTI_imp()
 {
-	P = popByte();
+	PLP_imp();
 	PC = popWord();
 }
 

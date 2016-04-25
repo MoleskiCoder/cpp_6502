@@ -88,13 +88,12 @@ public:
 	mos6502();
 	~mos6502();
 
-	void start(uint16_t address);
+	virtual void start(uint16_t address);
+	virtual void run();
 
-	void reset()
-	{
-		PC = getWord(0xfffc);
-		run();
-	}
+	virtual void reset();
+	virtual void irq();
+	virtual void nmi();
 
 	uint64_t getCycles() const
 	{
@@ -107,7 +106,6 @@ protected:
 
 	void resetRegisters();
 
-	virtual void run();
 	bool step();
 
 	uint64_t cycles;
@@ -133,6 +131,9 @@ protected:
 	uint8_t P;		// processor status
 
 private:
+	const uint16_t irq_vector = 0xfffe;
+	const uint16_t reset_vector = 0xfffc;
+	const uint16_t nmi_vector = 0xfffa;
 
 	typedef void (mos6502::*instruction_t)();
 	std::vector<std::pair<instruction_t, unsigned>> instructions =
@@ -371,6 +372,4 @@ private:
 		auto high = popByte();
 		return makeWord(low, high);
 	}
-
-	void pushStatus();
 };
