@@ -117,6 +117,7 @@ public:
 	}
 
 protected:
+	virtual void interrupt(uint16_t vector);
 	virtual bool execute(uint8_t instruction);
 	virtual void ___();
 

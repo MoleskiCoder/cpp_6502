@@ -617,23 +617,24 @@ void mos6502::ROR(uint16_t offset)
 void mos6502::reset()
 {
 	PC = getWord(reset_vector);
-	run();
+}
+
+void mos6502::interrupt(uint16_t vector)
+{
+	pushWord(PC);
+	pushByte(P);
+	P |= F_I;
+	PC = getWord(vector);
 }
 
 void mos6502::nmi()
 {
-	pushWord(PC);
-	pushByte(P);
-	P |= F_I;
-	PC = getWord(nmi_vector);
+	interrupt(nmi_vector);
 }
 
 void mos6502::irq()
 {
-	pushWord(PC);
-	pushByte(P);
-	P |= F_I;
-	PC = getWord(irq_vector);
+	interrupt(irq_vector);
 }
 
 
