@@ -12,7 +12,7 @@ int main() {
 
 	system6502 processor;
 
-	processor.reset();
+	processor.clear();
 
 	auto start = std::clock();
 
@@ -31,7 +31,7 @@ int main() {
 #ifdef EHBASIC
 	// EHBASIC
 	processor.loadRom("C:\\github\\cpp\\cpp_6502\\ehbasic.bin", 0xc000);
-	processor.start(0xc000);
+	processor.reset();
 #endif
 
 	auto finish = std::clock();

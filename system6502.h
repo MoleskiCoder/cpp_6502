@@ -8,7 +8,7 @@ public:
 	system6502();
 	~system6502();
 
-	void reset();
+	void clear();
 	void loadRom(std::string path, size_t offset);
 
 protected:
@@ -23,5 +23,12 @@ private:
 	uint16_t oldPC;
 	std::vector<uint8_t> memory;
 	std::map<uint8_t, int> instructionCounts;
+
+	uint16_t input = 0xF001;
+	uint16_t output = 0xF004;
+
+	void poll();
+	void pollInput();
+	void pollOutput();
 };
 

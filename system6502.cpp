@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "system6502.h"
 
+#include <conio.h>
 
 system6502::system6502()
 : memory(0x10000)
@@ -14,6 +15,8 @@ system6502::~system6502()
 
 bool system6502::execute(uint8_t instruction)
 {
+	poll();
+
 #ifdef TEST_SUITE1
 	if (PC == 0x45c0)
 	{
@@ -43,7 +46,7 @@ bool system6502::execute(uint8_t instruction)
 	return __super::execute(instruction);
 }
 
-void system6502::reset()
+void system6502::clear()
 {
 	clearMemory();
 	resetRegisters();
@@ -78,4 +81,33 @@ uint8_t system6502::getByte(uint16_t offset)
 void system6502::setByte(uint16_t offset, uint8_t value)
 {
 	memory[offset] = value;
+}
+
+void system6502::poll()
+{
+#ifdef EHBASIC
+	pollInput();
+	pollOutput();
+#endif
+}
+
+void system6502::pollInput()
+{
+	setByte(input, 0x0);
+	static uint64_t interval = 0;
+	if (++interval % 1000000 == 0)
+	{
+		if (_kbhit())
+		{
+			auto key = _getch();
+			setByte(input, (uint8_t)key);
+		}
+	}
+}
+
+void system6502::pollOutput()
+{
+	auto character = getByte(output);
+	if (character != 0x0)
+		printf("%c", character);
 }

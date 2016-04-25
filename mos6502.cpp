@@ -167,45 +167,13 @@ void mos6502::writeByte_AbsoluteY(uint8_t value)
 
 //
 
-void mos6502::updateFlag_Zero(uint8_t value)
-{
-	if (value == 0)
-		P |= F_Z;
-}
-
-void mos6502::updateFlag_Negative(int8_t value)
-{
-	if (value < 0)
-		P |= F_N;
-}
-
-//
-
-void mos6502::updateFlags_ZeroNegative(uint8_t value)
-{
-	updateFlag_Zero(value);
-	updateFlag_Negative(value);
-}
-
-void mos6502::reflectFlags_ZeroNegative(uint8_t value)
-{
-	P &= ~(F_N | F_Z);
-	updateFlags_ZeroNegative(value);
-}
-
-//
-
 void mos6502::CMP(uint8_t first, uint8_t second)
 {
 	P &= ~(F_N | F_Z | F_C);
 
 	uint16_t result = first - second;
 
-	if (!result)
-		P |= F_Z;
-	else
-		if (int8_t(result) < 0)
-			P |= F_N;
+	updateFlags_ZeroNegative((uint8_t)result);
 
 	if (!(result & 0xff00))
 		P |= F_C;
@@ -286,11 +254,7 @@ void mos6502::ADC_b(uint8_t data)
 	uint16_t sum = A + data + carry;
 	P &= ~(F_N | F_V | F_Z | F_C);
 
-	if (!(uint8_t)sum)
-		P |= F_Z;
-	else
-		if ((int8_t)sum < 0)
-			P |= F_N;
+	updateFlags_ZeroNegative((uint8_t)sum);
 
 	if (~(A ^ data) & (A ^ sum) & 0x80)
 		P |= F_V;
@@ -360,11 +324,7 @@ void mos6502::SBC_b(uint8_t data)
 
 	P &= ~(F_Z | F_V | F_N | F_C);
 
-	if (!(uint8_t)difference)
-		P |= F_Z;
-	else
-		if ((int8_t)difference < 0)
-			P |= F_N;
+	updateFlags_ZeroNegative((uint8_t)difference);
 
 	if ((A ^ data) & (A ^ difference) & 0x80)
 		P |= F_V;
@@ -391,11 +351,7 @@ void mos6502::SBC_d(uint8_t data)
 
 	uint8_t high = (A >> 4) - (data >> 4) - (int8_t(low) < 0);
 
-	if (!uint8_t(difference))
-		P |= F_Z;
-	else
-		if (difference & 0x80)
-			P |= F_N;
+	updateFlags_ZeroNegative(difference);
 
 	if ((A ^ data) & (A ^ difference) & 0x80)
 		P |= F_V;
@@ -584,11 +540,7 @@ uint8_t mos6502::ASL(uint8_t data)
 	P &= ~(F_N | F_Z | F_C);
 
 	uint8_t result = data << 1;
-	if (!result)
-		P |= F_Z;
-	else
-		if ((int8_t)result < 0)
-			P |= F_N;
+	updateFlags_ZeroNegative(result);
 
 	if (data & 0x80)
 		P |= F_C;
@@ -610,11 +562,7 @@ uint8_t mos6502::ROL(uint8_t data)
 	if (carry)
 		result |= 0x01;
 
-	if (!result)
-		P |= F_Z;
-	else
-		if ((int8_t)result < 0)
-			P |= F_N;
+	updateFlags_ZeroNegative(result);
 
 	return result;
 }
@@ -646,11 +594,7 @@ uint8_t mos6502::ROR(uint8_t data)
 	if (carry)
 		result |= 0x80;
 
-	if (!result)
-		P |= F_Z;
-	else
-		if ((int8_t)result < 0)
-			P |= F_N;
+	updateFlags_ZeroNegative(result);
 
 	return result;
 }
@@ -908,9 +852,5 @@ bool mos6502::execute(uint8_t instruction)
 void mos6502::run()
 {
 	cycles = 0;
-	for (;;)
-	{
-		if (!step())
-			break;
-	}
+	while (step());
 }

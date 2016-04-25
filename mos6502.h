@@ -90,6 +90,12 @@ public:
 
 	void start(uint16_t address);
 
+	void reset()
+	{
+		PC = getWord(0xfffc);
+		run();
+	}
+
 	uint64_t getCycles() const
 	{
 		return cycles;
@@ -302,12 +308,27 @@ private:
 
 	//
 
-	void updateFlag_Zero(uint8_t value);
-	void updateFlag_Negative(int8_t value);
+	bool updateFlag_Zero(uint8_t value)
+	{
+		return !value ? P |= F_Z, true : false;
+	}
 
-	void updateFlags_ZeroNegative(uint8_t value);
+	bool updateFlag_Negative(int8_t value)
+	{
+		return value < 0 ? P |= F_N, true : false;
+	}
 
-	void reflectFlags_ZeroNegative(uint8_t value);
+	void updateFlags_ZeroNegative(uint8_t value)
+	{
+		if (!updateFlag_Zero(value))
+			updateFlag_Negative(value);
+	}
+
+	void reflectFlags_ZeroNegative(uint8_t value)
+	{
+		P &= ~(F_N | F_Z);
+		updateFlags_ZeroNegative(value);
+	}
 
 	//
 
