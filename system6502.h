@@ -25,13 +25,14 @@ private:
 	std::vector<uint8_t> memory;
 	std::map<uint8_t, int> instructionCounts;
 
-	uint16_t input = 0xF004;
-	uint16_t output = 0xF001;
+#ifdef MEMORYMAP_CONSOLE_IO
+	uint16_t input = MEMORYMAP_CONSOLE_I;
+	uint16_t output = MEMORYMAP_CONSOLE_O;
+
+	unsigned pollInterval = 10000;
 
 	void poll();
-#ifdef EHBASIC
 	void pollInput();
-	unsigned pollInterval = 10000;
 #endif
 };
 

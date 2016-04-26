@@ -40,7 +40,9 @@ bool system6502::step()
 	}
 #endif
 
+#ifdef MEMORYMAP_CONSOLE_IO
 	poll();
+#endif
 
 	return __super::step();
 }
@@ -81,7 +83,7 @@ void system6502::loadRom(std::string path, size_t offset)
 uint8_t system6502::getByte(uint16_t offset)
 {
 	auto byte = memory[offset];
-#ifdef EHBASIC
+#ifdef MEMORYMAP_CONSOLE_IO
 	if (offset == input)
 		memory[offset] = 0x0;
 #endif
@@ -91,20 +93,19 @@ uint8_t system6502::getByte(uint16_t offset)
 void system6502::setByte(uint16_t offset, uint8_t value)
 {
 	memory[offset] = value;
-#ifdef EHBASIC
+#ifdef MEMORYMAP_CONSOLE_IO
 	if (offset == output)
 		printf("%c", value);
 #endif
 }
 
+#ifdef MEMORYMAP_CONSOLE_IO
+
 void system6502::poll()
 {
-#ifdef EHBASIC
 	pollInput();
-#endif
 }
 
-#ifdef EHBASIC
 void system6502::pollInput()
 {
 	if (cycles % pollInterval == 0)
@@ -116,4 +117,5 @@ void system6502::pollInput()
 		}
 	}
 }
+
 #endif
