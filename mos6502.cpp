@@ -857,8 +857,7 @@ bool mos6502::step()
 	assert(P & F_reserved);		// The F_reserved flag *must* always be set on the NMOS 6502
 
 #ifdef _DEBUG
-	printf("\nPC=%04x:", PC);
-	printf("P=%02x, A=%02x, X=%02x, Y=%02x, S=%02x	", P, A, X, Y, S);
+	printf("\n[%09lld] PC=%04x:P=%02x, A=%02x, X=%02x, Y=%02x, S=%02x	", cycles, PC, P, A, X, Y, S);
 #endif
 
 	return execute(fetchByte());
