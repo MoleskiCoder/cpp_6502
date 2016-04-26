@@ -850,11 +850,12 @@ INCDEC_GROUP_A_DEFINITIONS(DEC)
 void mos6502::start(uint16_t address)
 {
 	PC = address;
-	run();
 }
 
 bool mos6502::step()
 {
+	assert(P & F_reserved);		// The F_reserved flag *must* always be set on the NMOS 6502
+
 #ifdef _DEBUG
 	printf("\nPC=%04x:", PC);
 	printf("P=%02x, A=%02x, X=%02x, Y=%02x, S=%02x	", P, A, X, Y, S);

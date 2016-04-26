@@ -32,8 +32,9 @@ int main() {
 	// EHBASIC
 	processor.loadRom("C:\\github\\cpp\\cpp_6502\\ehbasic.bin", 0xc000);
 	processor.reset();
-	processor.run();
 #endif
+
+	processor.run();
 
 	auto finish = std::clock();
 
