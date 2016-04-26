@@ -96,7 +96,10 @@
 	ABSX_DECLARATION(x)
 
 #define INS(INS, MODE, CYCLES) \
-	{ &mos6502:: INS ## _ ## MODE, CYCLES, MODE, #INS}
+	{ &mos6502:: INS ## _ ## MODE, CYCLES, MODE, #INS }
+
+#define DMP(ADDR, BYTE) \
+	{ ADDR,	std::pair<instruction_t, instruction_t>(&mos6502::dump_ ## BYTE, &mos6502::dump_ ## ADDR)	}
 
 class mos6502
 {
@@ -156,7 +159,7 @@ private:
 
 	enum addressing_mode
 	{
-		_,
+		_,	// For the undefined instruction/mode handler
 		imp, imm,
 		rel,
 		xind, indy,
@@ -165,46 +168,39 @@ private:
 		ind
 	};
 
-	void dump_nothing()	{					}
+	void dump_nothing()	{ }
 
 	void dump_byte()	{ DUMP_BYTE(PC);	}
 	void dump_dbyte()	{ DUMP_DBYTE(PC);	}
 
-	void dump_a()		{ printf("A");						}
-	void dump_imm()		{ printf("#%02x", getByte(PC));		}
-	void dump_abs()		{ printf("$%04x", getWord(PC));		}
-	void dump_zp()		{ printf("$%02x", getByte(PC));		}
-	void dump_zpx()		{ printf("$%02x,X", getByte(PC));	}
-	void dump_zpy()		{ printf("$%02x,Y", getByte(PC));	}
-	void dump_absx()	{ printf("$%04x,X", getWord(PC));	}
-	void dump_absy()	{ printf("$%04x,Y", getWord(PC));	}
-	void dump_xind()	{ printf("($%02x,X)", getByte(PC));	}
-	void dump_indy()	{ printf("($%02x),Y", getByte(PC));	}
-	void dump_ind()		{ printf("($%04x)", getWord(PC));	}
-
-	void dump_rel()
-	{
-#ifdef _DEBUG
-		auto displacement = getByte(PC);
-		auto destination = PC + displacement;
-		printf("$%04x", destination);
-#endif
-	}
+	void dump_imp()		{												}
+	void dump_a()		{ printf("A");									}
+	void dump_imm()		{ printf("#$%02x", getByte(PC));				}
+	void dump_abs()		{ printf("$%04x", getWord(PC));					}
+	void dump_zp()		{ printf("$%02x", getByte(PC));					}
+	void dump_zpx()		{ printf("$%02x,X", getByte(PC));				}
+	void dump_zpy()		{ printf("$%02x,Y", getByte(PC));				}
+	void dump_absx()	{ printf("$%04x,X", getWord(PC));				}
+	void dump_absy()	{ printf("$%04x,Y", getWord(PC));				}
+	void dump_xind()	{ printf("($%02x,X)", getByte(PC));				}
+	void dump_indy()	{ printf("($%02x),Y", getByte(PC));				}
+	void dump_ind()		{ printf("($%04x)", getWord(PC));				}
+	void dump_rel()		{ printf("$%04x", 1 + PC + (int8_t)getByte(PC)); }
 
 	std::unordered_map<addressing_mode, std::pair<instruction_t, instruction_t>> addressingMode_Dumper =
 	{
-		{ imp,	std::pair<instruction_t, instruction_t>(&mos6502::dump_nothing, &mos6502::dump_nothing)	},
-		{ xind,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_xind)	},
-		{ zp,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_zp)		},
-		{ imm,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_imm)		},
-		{ abs,	std::pair<instruction_t, instruction_t>(&mos6502::dump_dbyte,	&mos6502::dump_abs)		},
-		{ indy,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_indy)	},
-		{ zpx,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_zpx)		},
-		{ zpy,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_zpy)		},
-		{ absx,	std::pair<instruction_t, instruction_t>(&mos6502::dump_dbyte,	&mos6502::dump_absx)	},
-		{ absy,	std::pair<instruction_t, instruction_t>(&mos6502::dump_dbyte,	&mos6502::dump_absy)	},
-		{ rel,	std::pair<instruction_t, instruction_t>(&mos6502::dump_byte,	&mos6502::dump_rel)		},
-		{ ind,	std::pair<instruction_t, instruction_t>(&mos6502::dump_dbyte,	&mos6502::dump_ind)		},
+		DMP(imp, nothing),
+		DMP(xind, byte),
+		DMP(zp, byte),
+		DMP(imm, byte),
+		DMP(abs, dbyte),
+		DMP(indy, byte),
+		DMP(zpx, byte),
+		DMP(zpy, byte),
+		DMP(absx, dbyte),
+		DMP(absy, dbyte),
+		DMP(rel, byte),
+		DMP(ind, dbyte),
 	};
 
 	struct instruction
