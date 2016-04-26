@@ -867,7 +867,7 @@ bool mos6502::execute(uint8_t instruction)
 {
 	DUMP_BYTEVALUE(instruction);
 
-	auto details = instructions[instruction];
+	const auto& details = instructions[instruction];
 
 	auto method = details.vector;
 	auto count = details.count;
@@ -876,7 +876,7 @@ bool mos6502::execute(uint8_t instruction)
 	auto mode = details.mode;
 	auto mnemomic = details.display;
 
-	auto dumper = addressingMode_Dumper[mode];
+	const auto& dumper = addressingMode_Dumper[mode];
 
 	(this->*(dumper.first))();
 
