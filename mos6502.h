@@ -3,20 +3,6 @@
 #include <vector>
 #include <unordered_map>
 
-#ifdef _DEBUG
-
-#	define DUMP_BYTEVALUE(x)		printf("%02x", x)
-#	define DUMP_BYTE(x)				DUMP_BYTEVALUE(getByte(x))
-#	define DUMP_DBYTE(x)			DUMP_BYTE(x), DUMP_BYTE(x + 1);
-
-#else
-
-#	define DUMP_BYTEVALUE(x)
-#	define DUMP_BYTE(x)
-#	define DUMP_DBYTE(x)
-
-#endif
-
 #define FIRST_PAGE 0x100
 
 #define BRANCH_DECLARATION(ins) \
@@ -170,8 +156,10 @@ private:
 
 	void dump_nothing()	{ }
 
-	void dump_byte()	{ DUMP_BYTE(PC);	}
-	void dump_dbyte()	{ DUMP_DBYTE(PC);	}
+	void dump_bytevalue(uint8_t value)	{ printf("%02x", value);			}
+	void dump_byte(uint16_t address)	{ dump_bytevalue(getByte(address));	}
+	void dump_byte()					{ dump_byte(PC);					}
+	void dump_dbyte()					{ dump_byte(PC); dump_byte(PC + 1);	}
 
 	void dump_imp()		{												}
 	void dump_a()		{ printf("A");									}

@@ -865,14 +865,14 @@ bool mos6502::step()
 
 bool mos6502::execute(uint8_t instruction)
 {
-	DUMP_BYTEVALUE(instruction);
-
 	const auto& details = instructions[instruction];
 
 	auto method = details.vector;
 	auto count = details.count;
 
 #ifdef _DEBUG
+	dump_bytevalue(instruction);
+
 	auto mode = details.mode;
 	auto mnemomic = details.display;
 
