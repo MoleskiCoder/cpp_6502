@@ -34,11 +34,18 @@ int main() {
 	processor.reset();
 #endif
 
+#ifdef SUDOKU_ASSEMBLE
+	processor.loadRom("C:\\github\\cpp\\cpp_6502\\sudoku.bin", 0xf000);
+	processor.reset();
+#endif
+
 	processor.run();
 
 	auto finish = std::clock();
 
 	auto elapsed = finish - start;
+
+	std::cout << std::endl << std::endl << "Cycles used " << processor.getCycles() << std::endl;
 
 	auto seconds = (elapsed % CLOCKS_PER_SEC) / double(CLOCKS_PER_SEC) + (elapsed / CLOCKS_PER_SEC);
 	std::cout << std::endl << std::endl << "Time taken " << seconds << std::endl;
