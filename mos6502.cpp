@@ -79,7 +79,7 @@ int8_t mos6502::readByte_ImmediateDisplacement()
 
 uint8_t mos6502::readByte_ZeroPageX()
 {
-	return getByte(lowByte(fetchByte()  + X));
+	return getByte(lowByte(fetchByte() + X));
 }
 
 uint8_t mos6502::readByte_ZeroPageY()

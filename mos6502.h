@@ -3,8 +3,6 @@
 #include <vector>
 #include <unordered_map>
 
-#define FIRST_PAGE 0x100
-
 #define BRANCH_DECLARATION(ins) \
 	void ins(int8_t displacement); \
 	void ins ## _rel();
@@ -137,6 +135,7 @@ protected:
 	uint8_t P;		// processor status
 
 private:
+	const uint16_t page_1 = 0x100;
 	const uint16_t irq_vector = 0xfffe;
 	const uint16_t reset_vector = 0xfffc;
 	const uint16_t nmi_vector = 0xfffa;
@@ -396,17 +395,17 @@ private:
 
 	//
 
-	uint8_t lowByte(uint16_t value)
+	static uint8_t lowByte(uint16_t value)
 	{
 		return value & 0xff;
 	}
 
-	uint8_t highByte(uint16_t value)
+	static uint8_t highByte(uint16_t value)
 	{
 		return (value & ~0xff) >> 8;
 	}
 
-	uint16_t makeWord(uint8_t low, uint8_t high)
+	static uint16_t makeWord(uint8_t low, uint8_t high)
 	{
 		return (high << 8) + low;
 	}
@@ -415,12 +414,12 @@ private:
 
 	void pushByte(uint8_t value)
 	{
-		setByte(FIRST_PAGE + S--, value);
+		setByte(page_1 + S--, value);
 	}
 
 	uint8_t popByte()
 	{
-		return getByte(FIRST_PAGE + ++S);
+		return getByte(page_1 + ++S);
 	}
 
 	void pushWord(uint16_t value)
