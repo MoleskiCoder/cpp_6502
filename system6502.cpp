@@ -49,8 +49,16 @@ bool system6502::step()
 
 bool system6502::execute(uint8_t instruction)
 {
+	auto profileAddress = PC - 1;	// We've already completed the fetch cycle.
+	auto currentCycles = getCycles();
+
 	instructionCounts[instruction]++;
-	return __super::execute(instruction);
+
+	auto returnValue = __super::execute(instruction);
+
+	addressProfiles[profileAddress] += (getCycles() - currentCycles);
+
+	return returnValue;
 }
 
 void system6502::clear()
