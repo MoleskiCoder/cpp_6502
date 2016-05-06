@@ -3,7 +3,9 @@
 #include <iostream>
 #include <fstream>
 
-#include <conio.h>
+#ifdef MEMORYMAP_CONSOLE_I
+#	include <conio.h>
+#endif
 
 system6502::system6502()
 :	memory(0x10000)
@@ -48,11 +50,11 @@ bool system6502::step()
 	}
 #endif
 
-#ifdef MEMORYMAP_CONSOLE_IO
+#ifdef MEMORYMAP_CONSOLE_I
 	poll();
 #endif
 
-	return __super::step();
+	return mos6502::step();
 }
 
 bool system6502::execute(uint8_t instruction)
@@ -66,7 +68,7 @@ bool system6502::execute(uint8_t instruction)
 	instructionCounts[instruction]++;
 #endif
 
-	auto returnValue = __super::execute(instruction);
+	auto returnValue = mos6502::execute(instruction);
 
 #ifdef PROFILE
 	addressProfiles[profileAddress] += (getCycles() - currentCycles);
@@ -105,7 +107,7 @@ void system6502::loadRom(std::string path, size_t offset)
 uint8_t system6502::getByte(uint16_t offset)
 {
 	auto byte = memory[offset];
-#ifdef MEMORYMAP_CONSOLE_IO
+#ifdef MEMORYMAP_CONSOLE_I
 	if (offset == input)
 		memory[offset] = 0x0;
 #endif
@@ -115,13 +117,13 @@ uint8_t system6502::getByte(uint16_t offset)
 void system6502::setByte(uint16_t offset, uint8_t value)
 {
 	memory[offset] = value;
-#ifdef MEMORYMAP_CONSOLE_IO
+#ifdef MEMORYMAP_CONSOLE_O
 	if (offset == output)
 		printf("%c", value);
 #endif
 }
 
-#ifdef MEMORYMAP_CONSOLE_IO
+#ifdef MEMORYMAP_CONSOLE_I
 
 void system6502::poll()
 {

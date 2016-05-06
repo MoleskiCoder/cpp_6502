@@ -4,7 +4,8 @@
 
 #include <cstdint>
 #include <vector>
-#include <unordered_map>
+#include <map>
+#include <stdio.h>
 
 #define BRANCH_DECLARATION(ins) \
 	void ins(int8_t displacement); \
@@ -177,7 +178,7 @@ private:
 	void dump_ind()		{ printf("($%04x)", getWord(PC));				}
 	void dump_rel()		{ printf("$%04x", 1 + PC + (int8_t)getByte(PC)); }
 
-	std::unordered_map<addressing_mode, std::pair<instruction_t, instruction_t>> addressingMode_Dumper =
+	std::map<addressing_mode, std::pair<instruction_t, instruction_t>> addressingMode_Dumper =
 	{
 		DMP(imp, nothing),
 		DMP(xind, byte),

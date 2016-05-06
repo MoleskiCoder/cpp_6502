@@ -36,14 +36,17 @@ private:
 	std::vector<uint64_t> addressProfiles;
 #endif
 
-#ifdef MEMORYMAP_CONSOLE_IO
+#ifdef MEMORYMAP_CONSOLE_I
 	uint16_t input = MEMORYMAP_CONSOLE_I;
-	uint16_t output = MEMORYMAP_CONSOLE_O;
 
 	unsigned pollInterval = 10000;
 
 	void poll();
 	void pollInput();
+#endif
+
+#ifdef MEMORYMAP_CONSOLE_O
+	uint16_t output = MEMORYMAP_CONSOLE_O;
 #endif
 };
 
