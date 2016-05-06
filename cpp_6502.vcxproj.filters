@@ -32,16 +32,16 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="system6502.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cpp_6502.cpp">
+    <ClCompile Include="stdafx.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mos6502.cpp">
+    <ClCompile Include="mos6502.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="system6502.cpp">
+    <ClCompile Include="cpp_6502.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
