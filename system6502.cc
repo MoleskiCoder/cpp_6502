@@ -1,12 +1,18 @@
-#include "stdafx.h"
 #include "system6502.h"
+
+#include <iostream>
+#include <fstream>
 
 #include <conio.h>
 
 system6502::system6502()
-:	memory(0x10000),
-	instructionCounts(0x100),
-	addressProfiles(0x10000)
+:	memory(0x10000)
+#ifdef COUNT_INSTRUCTIONS
+	,instructionCounts(0x100)
+#endif
+#ifdef PROFILE
+	,addressProfiles(0x10000)
+#endif
 {
 }
 

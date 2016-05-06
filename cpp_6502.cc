@@ -1,12 +1,7 @@
-// cpp_6502.cpp : Defines the entry point for the console application.
-//
-
-#include "stdafx.h"
 #include "system6502.h"
 
 #include <ctime>
 #include <iostream>
-#include <fstream>
 
 int main() {
 

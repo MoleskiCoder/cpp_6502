@@ -1,5 +1,8 @@
 #pragma once
 
+#include "config.h"
+
+#include <cstdint>
 #include <vector>
 #include <unordered_map>
 

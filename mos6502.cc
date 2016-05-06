@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "mos6502.h"
 
 #include <assert.h>

@@ -1,6 +1,12 @@
 #pragma once
+
+#include "config.h"
+
 #include "mos6502.h"
-#include <map>
+
+#include <cstdint>
+#include <string>
+#include <vector>
 
 class system6502 : public mos6502
 {
