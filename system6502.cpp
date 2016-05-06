@@ -4,7 +4,9 @@
 #include <conio.h>
 
 system6502::system6502()
-: memory(0x10000)
+:	memory(0x10000),
+	instructionCounts(0x100),
+	addressProfiles(0x10000)
 {
 }
 
@@ -49,14 +51,20 @@ bool system6502::step()
 
 bool system6502::execute(uint8_t instruction)
 {
-	auto profileAddress = PC - 1;	// We've already completed the fetch cycle.
+#ifdef PROFILE
+	uint16_t profileAddress = PC - 1;	// We've already completed the fetch cycle.
 	auto currentCycles = getCycles();
+#endif
 
+#ifdef COUNT_INSTRUCTIONS
 	instructionCounts[instruction]++;
+#endif
 
 	auto returnValue = __super::execute(instruction);
 
+#ifdef PROFILE
 	addressProfiles[profileAddress] += (getCycles() - currentCycles);
+#endif
 
 	return returnValue;
 }

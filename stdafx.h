@@ -22,3 +22,6 @@
 #define MEMORYMAP_CONSOLE_I 0xe004
 #define MEMORYMAP_CONSOLE_O 0xe001
 #endif
+
+#define COUNT_INSTRUCTIONS
+#define PROFILE

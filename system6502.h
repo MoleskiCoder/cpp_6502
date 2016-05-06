@@ -23,8 +23,12 @@ protected:
 private:
 	uint16_t oldPC;
 	std::vector<uint8_t> memory;
-	std::map<uint8_t, int> instructionCounts;
-	std::map<uint16_t, uint64_t> addressProfiles;
+#ifdef COUNT_INSTRUCTIONS
+	std::vector<uint64_t> instructionCounts;
+#endif
+#ifdef PROFILE
+	std::vector<uint64_t> addressProfiles;
+#endif
 
 #ifdef MEMORYMAP_CONSOLE_IO
 	uint16_t input = MEMORYMAP_CONSOLE_I;
