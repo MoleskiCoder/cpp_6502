@@ -338,17 +338,10 @@ private:
 
 	uint16_t getWord(uint16_t offset);
 
-	// Fetches increment their reference counter
-
-	uint8_t fetchByte(uint16_t& counter);
-	uint16_t fetchWord(uint16_t& counter);
-
-	// Fetches without a reference counter increment PC
+	// Fetches increment PC
 
 	uint8_t fetchByte();
-
 	uint16_t fetchWord();
-	uint16_t fetchWord_Indirect();
 
 	//
 

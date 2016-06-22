@@ -31,32 +31,16 @@ uint16_t mos6502::getWord(uint16_t offset)
 
 //
 
-uint8_t mos6502::fetchByte(uint16_t& counter)
-{
-	return getByte(counter++);
-}
-
 uint8_t mos6502::fetchByte()
 {
-	return fetchByte(PC);
-}
-
-uint16_t mos6502::fetchWord(uint16_t& counter)
-{
-	auto word = getWord(counter);
-	counter += 2;
-	return word;
+	return getByte(PC++);
 }
 
 uint16_t mos6502::fetchWord()
 {
-	return fetchWord(PC);
-}
-
-uint16_t mos6502::fetchWord_Indirect()
-{
-	auto indirection = fetchWord();
-	return fetchWord(indirection);
+	auto word = getWord(PC);
+	PC += 2;
+	return word;
 }
 
 //
