@@ -30,7 +30,7 @@ int main() {
 #endif
 
 #ifdef SUDOKU_ASSEMBLE
-	processor.loadRom("C:\\github\\cpp\\cpp_6502\\sudoku.bin", 0xf000);
+	processor.loadRom("C:\\github\\6502\\6502_sudoku\\sudoku.65b", 0xf000);
 	processor.reset();
 #endif
 
