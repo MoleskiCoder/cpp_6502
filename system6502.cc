@@ -74,6 +74,9 @@ bool system6502::execute(uint8_t instruction)
 	addressProfiles[profileAddress] += (getCycles() - currentCycles);
 #endif
 
+	if (instruction == 0x00)
+		return false;
+
 	return returnValue;
 }
 
