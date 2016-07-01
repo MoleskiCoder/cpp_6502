@@ -6,9 +6,14 @@ ipch/
 
 *.opendb
 *.sdf
+*.vsp
+*.VC.db
 
 *.swp
 *~
+
+*.bin
+*.rom
 
 # Compiled Object files
 *.slo
