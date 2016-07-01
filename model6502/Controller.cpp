@@ -7,6 +7,10 @@
 #include <sstream>
 #include <iomanip>
 
+#ifdef _DEBUG
+#	include <Windows.h>
+#endif
+
 using namespace std::placeholders;
 
 Controller::Controller(Configuration configuration) {
@@ -169,7 +173,7 @@ void Controller::Processor_ExecutedInstruction(const AddressEventArgs& addressEv
 
 void Controller::Controller_Disassembled(const DisassemblyEventArgs& e) {
 #if _DEBUG
-	BufferDiagnosticsOutput(output);
+	BufferDiagnosticsOutput(e.getOutput());
 #endif
 	if (disassemblyLog != nullptr)
 		*disassemblyLog << e.getOutput();
@@ -293,7 +297,7 @@ void Controller::HandleByteWritten(uint8_t cell) {
 #if _DEBUG
 	std::ostringstream output;
 	output << "Write: " << disassembler->Dump_ByteValue(cell) << ":" << character << std::endl;
-	Disassembled(output.str());
+	FireDelegates(Disassembled, output.str());
 #endif
 }
 
@@ -302,7 +306,7 @@ void Controller::HandleByteRead(uint8_t cell) {
 #if _DEBUG
 	std::ostringstream output;
 	output << "Read: " << disassembler->Dump_ByteValue(cell) << ":" << character << std::endl;
-	Disassembled(output.str());
+	FireDelegates(Disassembled, output.str());
 #endif
 }
 
