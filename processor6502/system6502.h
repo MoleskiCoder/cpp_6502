@@ -64,13 +64,15 @@ protected:
 private:
 
 	static void FireDelegates(const address_signal_t& delegates, const AddressEventArgs& e) {
-		for (auto& delegate : delegates)
-			delegate(e);
+		if (!delegates.empty())
+			for (auto& delegate : delegates)
+				delegate(e);
 	}
 
 	static void FireDelegates(const void_signal_t& delegates) {
-		for (auto& delegate : delegates)
-			delegate();
+		if (!delegates.empty())
+			for (auto& delegate : delegates)
+				delegate();
 	}
 
 	void ClearMemory();

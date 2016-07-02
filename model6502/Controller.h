@@ -92,8 +92,9 @@ public:
 private:
 
 	static void FireDelegates(const disassembly_signal_t& delegates, const DisassemblyEventArgs& e) {
-		for (auto& delegate : delegates)
-			delegate(e);
+		if (!delegates.empty())
+			for (auto& delegate : delegates)
+				delegate(e);
 	}
 
 	void Processor_Starting();
