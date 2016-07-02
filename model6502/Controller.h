@@ -128,4 +128,8 @@ private:
 
 	void Profiler_StartingOutput();
 	void Profiler_FinishedOutput();
+
+	void PrintPercentage(std::ostream& out, double value) {
+		out << std::fixed << std::setw(3) << std::setprecision(1) << std::setfill('0') << value << "%";
+	}
 };

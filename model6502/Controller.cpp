@@ -316,7 +316,9 @@ void Controller::Profiler_EmitScope(const ProfileScopeEventArgs& e) {
 	auto scope = e.getScope();
 	auto proportion = (double)cycles / processor->getCycles();
 	std::ostringstream output;
-	output << "\t[" << std::setw(2) << std::setfill('0') << proportion * 100 << "][" << std::setw(9) << cycles << "][" << count << "]\t" << scope << std::endl;
+	output << "\t[";
+	PrintPercentage(output, proportion * 100);
+	output << "][" << std::setw(9) << cycles << "][" << count << "]\t" << scope << std::endl;
 	FireDelegates(Disassembled, output.str());
 }
 
@@ -325,7 +327,9 @@ void Controller::Profiler_EmitLine(const ProfileLineEventArgs& e) {
 	auto source = e.getSource();
 	auto proportion = (double)cycles / processor->getCycles();
 	std::ostringstream output;
-	output << "\t[" << std::setw(2) << std::setfill('0') << proportion * 100 << "][" << std::setw(9) << cycles << "]\t" << source << std::endl;
+	output << "\t[";
+	PrintPercentage(output, proportion * 100);
+	output << "][" << std::setw(9) << cycles << "]\t" << source << std::endl;
 	FireDelegates(Disassembled, output.str());
 }
 
