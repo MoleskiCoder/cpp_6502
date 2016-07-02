@@ -46,7 +46,7 @@ public:
 	address_signal_t ExecutingInstruction;
 	address_signal_t ExecutedInstruction;
 
-	virtual uint8_t GetByte(uint16_t offset);
+	virtual uint8_t GetByte(uint16_t offset) const;
 	virtual void SetByte(uint16_t offset, uint8_t value);
 
 protected:

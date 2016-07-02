@@ -51,9 +51,9 @@ public:
 	virtual void TriggerIRQ();
 	virtual void TriggerNMI();
 
-	uint16_t GetWord(uint16_t offset);
+	uint16_t GetWord(uint16_t offset) const;
 
-	virtual uint8_t GetByte(uint16_t offset) = 0;
+	virtual uint8_t GetByte(uint16_t offset) const = 0;
 	virtual void SetByte(uint16_t offset, uint8_t value) = 0;
 
 protected:
@@ -458,7 +458,7 @@ private:
 
 	ProcessorType level;
 
-	std::array<Instruction, 0x100>  overlay6502;
-	std::array<Instruction, 0x100>  overlay65sc02;
-	std::array<Instruction, 0x100>  overlay65c02;
+	std::array<Instruction, 0x100> overlay6502;
+	std::array<Instruction, 0x100> overlay65sc02;
+	std::array<Instruction, 0x100> overlay65c02;
 };

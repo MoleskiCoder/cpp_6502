@@ -49,7 +49,7 @@ void System6502::Run() {
 	FireDelegates(Finished);
 }
 
-uint8_t System6502::GetByte(uint16_t offset) {
+uint8_t System6502::GetByte(uint16_t offset) const {
 	auto content = memory[offset];
 	AddressEventArgs e(offset, content);
 	FireDelegates(ReadingByte, e);

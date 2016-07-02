@@ -39,7 +39,7 @@ void MOS6502::TriggerNMI() {
 	Interrupt(NMIvector);
 }
 
-uint16_t MOS6502::GetWord(uint16_t offset) {
+uint16_t MOS6502::GetWord(uint16_t offset) const {
 	auto low = GetByte(offset);
 	auto high = GetByte((uint16_t)(offset + 1));
 	return MakeWord(low, high);
