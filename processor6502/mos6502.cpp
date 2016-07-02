@@ -53,8 +53,8 @@ void MOS6502::Interrupt(uint16_t vector) {
 }
 
 void MOS6502::Execute(uint8_t cell) {
-	auto instruction = instructions[cell];
-	auto method = instruction.vector;
+	const auto& instruction = instructions[cell];
+	const auto& method = instruction.vector;
 	method();
 	cycles += instruction.count;
 }
