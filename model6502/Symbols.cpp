@@ -23,8 +23,9 @@ void Symbols::AssignScopes() {
 	for(auto& parsedScopeElement : parsedScopes) {
 		auto& parsedScope = parsedScopeElement.second.element;
 		auto name = parsedScope["name"];
+		auto trimmedName = name.substr(1, name.length() - 2);
 		auto size = parsedScope["size"];
-		scopes[name.substr(1, name.length() - 2)] = (uint16_t)std::stoi(size);
+		scopes[trimmedName] = (uint16_t)std::stoi(size);
 	}
 }
 
@@ -33,14 +34,15 @@ void Symbols::AssignSymbols() {
 	for(auto& symbolElement : symbols) {
 		auto& symbol = symbolElement.second.element;
 		auto name = symbol["name"];
+		auto trimmedName = name.substr(1, name.length() - 2);
 		auto value = symbol["val"].substr(2);
 		auto number = (uint16_t)std::stoi(value, nullptr, 16);
 		auto symbolType = symbol["type"];
 		if (symbolType == "lab") {
-			labels[number] = name.substr(1, name.length() - 2);
-			addresses[name] = number;
+			labels[number] = trimmedName;
+			addresses[trimmedName] = number;
 		} else if (symbolType == "equ") {
-			constants[number] = name.substr(1, name.length() - 2);
+			constants[number] = trimmedName;
 		}
 	}
 }
