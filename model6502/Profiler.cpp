@@ -10,6 +10,10 @@ Profiler::Profiler(System6502& targetProcessor, Disassembly& disassemblerTarget,
 	countInstructions(instructions),
 	profileAddresses(addresses)
 {
+	instructionCounts.fill(0);
+	addressProfiles.fill(0);
+	addressCounts.fill(0);
+
 	if (countInstructions || profileAddresses)
 		processor.ExecutingInstruction.push_back(std::bind(&Profiler::Processor_ExecutingInstruction, this, _1));
 	if (profileAddresses)
