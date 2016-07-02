@@ -24,7 +24,7 @@ void Symbols::AssignScopes() {
 		auto& parsedScope = parsedScopeElement.second.element;
 		auto name = parsedScope["name"];
 		auto size = parsedScope["size"];
-		scopes[name] = (uint16_t)std::stoi(size);//boost::lexical_cast<uint16_t>(size);
+		scopes[name.substr(1, name.length() - 2)] = (uint16_t)std::stoi(size);
 	}
 }
 
