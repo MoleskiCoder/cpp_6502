@@ -61,7 +61,7 @@ Configuration::Configuration(std::string path)
 	countInstructions = true;
 	profileAddresses = true;
 #else
-	speed = 80.0;
+	speed = 2.0;
 	disassemble = false;
 	debugFile = "C:\\github\\6502\\6502_sudoku\\sudoku.dbg";
 #endif

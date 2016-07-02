@@ -9,10 +9,6 @@ MOS6502::MOS6502(ProcessorType cpuLevel)
 	Install65c02Instructions();
 }
 
-ProcessorType MOS6502::getLevel() const {
-	return level;
-}
-
 void MOS6502::Initialise() {
 	cycles = 0;
 	ResetRegisters();

@@ -11,7 +11,7 @@
 
 class MOS6502 {
 public:
-	typedef std::function<void(void)> instruction_t;
+	typedef std::function<void()> instruction_t;
 
 	struct Instruction {
 		instruction_t vector = nullptr;
@@ -22,7 +22,23 @@ public:
 
 	MOS6502(ProcessorType level);
 
-	ProcessorType getLevel() const;
+	ProcessorType getLevel() const	{ return level;		}
+	uint64_t getCycles() const		{ return cycles;	}
+
+	bool getProceed() const		{ return proceed;	}
+	void setProceed(bool value)	{ proceed = value;	}
+
+	uint16_t getPC() const { return pc; }
+	uint8_t getX() const { return x; }
+	uint8_t getY() const { return y; }
+	uint8_t getA() const { return a; }
+	uint8_t getS() const { return s; }
+
+	const StatusFlags& getP() const { return p; }
+
+	const Instruction& getInstruction(uint8_t code) const {
+		return instructions[code];
+	}
 
 	virtual void Initialise();
 
@@ -36,20 +52,6 @@ public:
 	virtual void TriggerNMI();
 
 	uint16_t GetWord(uint16_t offset);
-
-	uint16_t pc;	// program counter
-	uint8_t x;		// index register X
-	uint8_t y;		// index register Y
-	uint8_t a;		// accumulator
-	uint8_t s;		// stack pointer
-
-	StatusFlags p = 0;	// processor status
-
-	uint64_t cycles;
-
-	bool proceed = true;
-
-	std::array<Instruction, 0x100> instructions;
 
 	virtual uint8_t GetByte(uint16_t offset) = 0;
 	virtual void SetByte(uint16_t offset, uint8_t value) = 0;
@@ -439,6 +441,20 @@ private:
 	const uint16_t IRQvector = 0xfffe;
 	const uint16_t RSTvector = 0xfffc;
 	const uint16_t NMIvector = 0xfffa;
+
+	uint16_t pc;	// program counter
+	uint8_t x;		// index register X
+	uint8_t y;		// index register Y
+	uint8_t a;		// accumulator
+	uint8_t s;		// stack pointer
+
+	StatusFlags p = 0;	// processor status
+
+	uint64_t cycles;
+
+	bool proceed = true;
+
+	std::array<Instruction, 0x100> instructions;
 
 	ProcessorType level;
 

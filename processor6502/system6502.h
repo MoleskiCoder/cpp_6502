@@ -16,16 +16,7 @@ public:
 	const double Mega = 1000000;
 	const double Milli = 0.001;
 
-	uint64_t heldCycles = 0;
-
-private:
-	double speed;  // Speed in MHz, e.g. 2.0 == 2Mhz, 1.79 = 1.79Mhz
-
-	double cyclesPerSecond;
-	double cyclesPerMillisecond;
-	uint64_t cyclesPerInterval;
-
-	bool running;
+	uint64_t getHeldCycles() const { return heldCycles; }
 
 public:
 	System6502(ProcessorType level, double speed, clock_t pollInterval);
@@ -62,7 +53,6 @@ protected:
 	virtual void Execute(uint8_t cell);
 
 private:
-
 	static void FireDelegates(const address_signal_t& delegates, const AddressEventArgs& e) {
 		if (!delegates.empty())
 			for (auto& delegate : delegates)
@@ -84,6 +74,16 @@ private:
 	void System6502_Finished();
 	void System6502_Polling();
 	void System6502_ExecutedInstruction(const AddressEventArgs&);
+
+	double speed;  // Speed in MHz, e.g. 2.0 == 2Mhz, 1.79 = 1.79Mhz
+
+	double cyclesPerSecond;
+	double cyclesPerMillisecond;
+	uint64_t cyclesPerInterval;
+
+	uint64_t heldCycles = 0;
+
+	bool running;
 
 	std::array<uint8_t, 0x10000> memory;
 	std::array<bool, 0x10000> locked;

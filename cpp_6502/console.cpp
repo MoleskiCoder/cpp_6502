@@ -5,6 +5,9 @@
 #include <chrono>
 #include <iomanip>
 
+#include <boost/timer/timer.hpp>
+#include <boost/chrono.hpp>
+
 #include <Configuration.h>
 #include <Controller.h>
 
@@ -35,12 +38,16 @@ int main() {
 	Controller controller(configuration);
 
 	controller.Configure();
-	controller.Start();
+
+	{
+		boost::timer::auto_cpu_timer cpu_timer;
+		controller.Start();
+	}
 
 	auto hertz = controller.speed * controller.processor->Mega;
 
-	auto cycles = controller.processor->cycles;
-	auto heldCycles = controller.processor->heldCycles;
+	auto cycles = controller.processor->getCycles();
+	auto heldCycles = controller.processor->getHeldCycles();
 
 	auto start = controller.startTime;
 	auto finish = controller.finishTime;
@@ -58,7 +65,7 @@ int main() {
 	auto hostHertz = controller.hostSpeed * controller.processor->Mega;
 	auto cyclesPerHostCycle = hostHertz / (cyclesPerSecond * holdProportion);
 
-	std::cout << std::endl << "** Stopped PC=" << std::setw(4) << std::setfill('0') << controller.processor->pc;
+	std::cout << std::endl << "** Stopped PC=" << std::setw(4) << std::setfill('0') << controller.processor->getPC();
 
 #if TEST_SUITE1
 	var test = controller.Processor.GetByte(0x0210);

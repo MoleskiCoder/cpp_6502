@@ -46,7 +46,7 @@ void Profiler::EmitProfileInformation() {
 		for (auto& scopeCycle : scopeCycles) {
 			auto name = scopeCycle.first;
 			auto cycles = scopeCycle.second;
-			auto namedAddress = (size_t)symbols.addresses[name];
+			auto namedAddress = (size_t)symbols.getAddresses().find(name)->second;
 			auto count = addressCounts[namedAddress];
 			FireDelegates(EmitScope, ProfileScopeEventArgs(name, cycles, count));
 		}
@@ -56,7 +56,7 @@ void Profiler::EmitProfileInformation() {
 
 void Profiler::Processor_ExecutingInstruction(const AddressEventArgs& addressEvent) {
 	if (profileAddresses) {
-		priorCycleCount = processor.cycles;
+		priorCycleCount = processor.getCycles();
 		addressCounts[addressEvent.getAddress()]++;
 	}
 	if (countInstructions)
@@ -65,7 +65,7 @@ void Profiler::Processor_ExecutingInstruction(const AddressEventArgs& addressEve
 
 void Profiler::Processor_ExecutedInstruction(const AddressEventArgs& addressEvent) {
 	if (profileAddresses) {
-		auto cycles = processor.cycles - priorCycleCount;
+		auto cycles = processor.getCycles() - priorCycleCount;
 		addressProfiles[addressEvent.getAddress()] += cycles;
 		auto addressScope = addressScopes[addressEvent.getAddress()];
 		if (!addressScope.empty()) {
@@ -77,11 +77,11 @@ void Profiler::Processor_ExecutedInstruction(const AddressEventArgs& addressEven
 }
 
 void Profiler::BuildAddressScopes() {
-	for (auto& label : symbols.labels) {
+	for (auto& label : symbols.getLabels()) {
 		auto address = label.first;
 		auto key = label.second;
-		auto scope = symbols.scopes.find(key);
-		if (scope != symbols.scopes.end()) {
+		auto scope = symbols.getScopes().find(key);
+		if (scope != symbols.getScopes().end()) {
 			for (uint16_t i = address; i < address + scope->second; ++i) {
 				addressScopes[i] = key;
 			}

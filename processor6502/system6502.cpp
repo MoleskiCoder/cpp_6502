@@ -69,7 +69,7 @@ void System6502::SetByte(uint16_t offset, uint8_t value) {
 void System6502::Execute(uint8_t cell) {
 
 	// XXXX Fetch byte has already incremented PC.
-	auto executingAddress = (uint16_t)(pc - 1);
+	auto executingAddress = (uint16_t)(getPC() - 1);
 
 	AddressEventArgs e(executingAddress, cell);
 	FireDelegates(ExecutingInstruction, e);
@@ -78,7 +78,7 @@ void System6502::Execute(uint8_t cell) {
 }
 
 void System6502::CheckPoll() {
-	if ((cycles % cyclesPerInterval) == 0)
+	if ((getCycles() % cyclesPerInterval) == 0)
 		FireDelegates(Polling);
 }
 
@@ -101,7 +101,7 @@ void System6502::System6502_Polling() {
 	auto timerCurrent = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
 
 	auto cyclesAllowed = timerCurrent * cyclesPerMillisecond;
-	auto cyclesMismatch = cycles - cyclesAllowed;
+	auto cyclesMismatch = getCycles() - cyclesAllowed;
 	if (cyclesMismatch > 0.0) {
 		auto delay = cyclesMismatch / cyclesPerMillisecond;
 		if (delay > 0) {

@@ -130,20 +130,20 @@ void Controller::Processor_ExecutingInstruction(const AddressEventArgs& addressE
 
 	if (disassemble) {
 
-		auto instruction = processor->instructions[cell];
+		const auto& instruction = processor->getInstruction(cell);
 		auto mode = instruction.mode;
 
 		std::ostringstream output;
 
-		output << std::endl << "[" << std::setw(9) << std::setfill('0') << processor->cycles << "] ";
+		output << std::endl << "[" << std::setw(9) << std::setfill('0') << processor->getCycles() << "] ";
 		output << std::hex;
 		output << "PC=" << std::setw(4) << std::setfill('0') << address << ":";
-		output << "P=" << (std::string)processor->p << ", ";
+		output << "P=" << (std::string)processor->getP() << ", ";
 		output << std::setw(2);
-		output << "A=" << (int)processor->a << ", ";
-		output << "X=" << (int)processor->x << ", ";
-		output << "Y=" << (int)processor->y << ", ";
-		output << "S=" << (int)processor->y << "\t";
+		output << "A=" << (int)processor->getA() << ", ";
+		output << "X=" << (int)processor->getX() << ", ";
+		output << "Y=" << (int)processor->getY() << ", ";
+		output << "S=" << (int)processor->getS() << "\t";
 
 		output << disassembler->Dump_ByteValue(cell);
 		output << disassembler->DumpBytes(mode, address + 1);
@@ -156,19 +156,19 @@ void Controller::Processor_ExecutingInstruction(const AddressEventArgs& addressE
 	}
 
 	if (stopAddressEnabled && stopAddress == address)
-		processor->proceed = false;
+		processor->setProceed(false);
 
 	if (stopWhenLoopDetected) {
-		if (oldPC == processor->pc)
-			processor->proceed = false;
+		if (oldPC == processor->getPC())
+			processor->setProceed(false);
 		else
-			oldPC = processor->pc;
+			oldPC = processor->getPC();
 	}
 }
 
 void Controller::Processor_ExecutedInstruction(const AddressEventArgs& addressEvent) {
 	if (stopBreak && breakInstruction == addressEvent.getCell())
-		processor->proceed = false;
+		processor->setProceed(false);
 }
 
 void Controller::Controller_Disassembled(const DisassemblyEventArgs& e) {
@@ -314,7 +314,7 @@ void Controller::Profiler_EmitScope(const ProfileScopeEventArgs& e) {
 	auto cycles = e.getCycles();
 	auto count = e.getCount();
 	auto scope = e.getScope();
-	auto proportion = (double)cycles / processor->cycles;
+	auto proportion = (double)cycles / processor->getCycles();
 	std::ostringstream output;
 	output << "\t[" << std::setw(2) << std::setfill('0') << proportion * 100 << "][" << std::setw(9) << cycles << "][" << count << "]\t" << scope << std::endl;
 	FireDelegates(Disassembled, output.str());
@@ -323,7 +323,7 @@ void Controller::Profiler_EmitScope(const ProfileScopeEventArgs& e) {
 void Controller::Profiler_EmitLine(const ProfileLineEventArgs& e) {
 	auto cycles = e.getCycles();
 	auto source = e.getSource();
-	auto proportion = (double)cycles / processor->cycles;
+	auto proportion = (double)cycles / processor->getCycles();
 	std::ostringstream output;
 	output << "\t[" << std::setw(2) << std::setfill('0') << proportion * 100 << "][" << std::setw(9) << cycles << "]\t" << source << std::endl;
 	FireDelegates(Disassembled, output.str());

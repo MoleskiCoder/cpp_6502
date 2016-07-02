@@ -6,7 +6,7 @@
 #include <functional>
 
 #include <system6502.h>
-//
+
 #include "Disassembly.h"
 #include "Symbols.h"
 
@@ -24,8 +24,8 @@ public:
 	std::map<std::string, uint64_t> scopeCycles;
 
 	System6502& processor;
-	Disassembly& disassembler;
-	Symbols& symbols;
+	const Disassembly& disassembler;
+	const Symbols& symbols;
 
 	bool countInstructions;
 	bool profileAddresses;
