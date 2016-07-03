@@ -38,6 +38,12 @@ std::string Disassembly::Dump_ByteValue(uint8_t value) const {
 	return output.str();
 }
 
+std::string Disassembly::Dump_WordValue(uint16_t value) const {
+	std::ostringstream output;
+	output << std::hex << std::setw(4) << std::setfill('0') << (int)value;
+	return output.str();
+}
+
 std::string Disassembly::DumpBytes(AddressingMode mode, uint16_t current) const {
 	return getDumper(mode).byteDumper(current);
 }
@@ -97,7 +103,7 @@ std::string Disassembly::ConvertAddress(uint16_t address) const {
 	if (label != symbols.getLabels().end())
 		return label->second;
 	std::ostringstream output;
-	output << "$" << Dump_DByte(address);
+	output << "$" << Dump_WordValue(address);
 	return output.str();
 }
 
@@ -106,7 +112,7 @@ std::string Disassembly::ConvertAddress(uint8_t address) const {
 	if (label != symbols.getLabels().end())
 		return label->second;
 	std::ostringstream output;
-	output << "$" << Dump_Byte(address);
+	output << "$" << Dump_ByteValue(address);
 	return output.str();
 }
 
@@ -121,7 +127,7 @@ std::string Disassembly::ConvertConstant(uint8_t constant) const {
 	auto label = symbols.getConstants().find(constant);
 	if (label != symbols.getConstants().end())
 		return label->second;
-	return Dump_Byte(constant);
+	return Dump_ByteValue(constant);
 }
 
 ////
@@ -192,7 +198,7 @@ std::string Disassembly::Dump_xind(uint16_t current) const {
 std::string Disassembly::Dump_indy(uint16_t current) const {
 	std::ostringstream output;
 	auto zp = GetByte(current);
-	output << "(" << ConvertAddress(zp) << "),Y)";
+	output << "(" << ConvertAddress(zp) << "),Y";
 	return output.str();
 }
 

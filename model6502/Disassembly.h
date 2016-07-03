@@ -20,6 +20,8 @@ public:
 	Disassembly(MOS6502& processor, const Symbols& symbols);
 
 	std::string Dump_ByteValue(uint8_t value) const;
+	std::string Dump_WordValue(uint16_t value) const;
+
 	std::string DumpBytes(AddressingMode mode, uint16_t current) const;
 	std::string Disassemble(uint16_t current) const;
 	std::string DumpOperand(AddressingMode mode, uint16_t current) const;
