@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "Profiler.h"
 
-using namespace std::placeholders;
-
 Profiler::Profiler(System6502& targetProcessor, Disassembly& disassemblerTarget, Symbols& symbolsTarget, bool instructions, bool addresses)
 :	processor(targetProcessor),
 	disassembler(disassemblerTarget),
@@ -15,9 +13,9 @@ Profiler::Profiler(System6502& targetProcessor, Disassembly& disassemblerTarget,
 	addressCounts.fill(0);
 
 	if (countInstructions || profileAddresses)
-		processor.ExecutingInstruction.connect(std::bind(&Profiler::Processor_ExecutingInstruction, this, _1));
+		processor.ExecutingInstruction.connect(std::bind(&Profiler::Processor_ExecutingInstruction, this, std::placeholders::_1));
 	if (profileAddresses)
-		processor.ExecutedInstruction.connect(std::bind(&Profiler::Processor_ExecutedInstruction, this, _1));
+		processor.ExecutedInstruction.connect(std::bind(&Profiler::Processor_ExecutedInstruction, this, std::placeholders::_1));
 
 	BuildAddressScopes();
 }

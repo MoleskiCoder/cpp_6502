@@ -11,8 +11,6 @@
 #	include <Windows.h>
 #endif
 
-using namespace std::placeholders;
-
 Controller::Controller(Configuration configuration) {
 
 	disassemble = configuration.disassemble;
@@ -60,13 +58,13 @@ void Controller::Configure() {
 	processor.reset(new System6502(processorLevel, speed, pollIntervalMilliseconds));
 
 	if (disassemble || stopAddressEnabled || stopWhenLoopDetected || profileAddresses)
-		processor->ExecutingInstruction.connect(std::bind(&Controller::Processor_ExecutingInstruction, this, _1));
+		processor->ExecutingInstruction.connect(std::bind(&Controller::Processor_ExecutingInstruction, this, std::placeholders::_1));
 	if (stopBreak)
-		processor->ExecutedInstruction.connect(std::bind(&Controller::Processor_ExecutedInstruction, this, _1));
+		processor->ExecutedInstruction.connect(std::bind(&Controller::Processor_ExecutedInstruction, this, std::placeholders::_1));
 
-	processor->WritingByte.connect(std::bind(&Controller::Processor_WritingByte, this, _1));
-	processor->ReadingByte.connect(std::bind(&Controller::Processor_ReadingByte, this, _1));
-	processor->InvalidWriteAttempt.connect(std::bind(&Controller::Processor_InvalidWriteAttempt, this, _1));
+	processor->WritingByte.connect(std::bind(&Controller::Processor_WritingByte, this, std::placeholders::_1));
+	processor->ReadingByte.connect(std::bind(&Controller::Processor_ReadingByte, this, std::placeholders::_1));
+	processor->InvalidWriteAttempt.connect(std::bind(&Controller::Processor_InvalidWriteAttempt, this, std::placeholders::_1));
 	processor->Starting.connect(std::bind(&Controller::Processor_Starting, this));
 	processor->Finished.connect(std::bind(&Controller::Processor_Finished, this));
 	processor->Polling.connect(std::bind(&Controller::Processor_Polling, this));
@@ -95,7 +93,7 @@ void Controller::Configure() {
 	symbols.reset(new Symbols(debugFile));
 
 	disassembler.reset(new Disassembly(*processor, *symbols));
-	Disassembled.connect(std::bind(&Controller::Controller_Disassembled, this, _1));
+	Disassembled.connect(std::bind(&Controller::Controller_Disassembled, this, std::placeholders::_1));
 
 	profiler.reset(new Profiler(*processor, *disassembler, *symbols, countInstructions, profileAddresses));
 	profiler->StartingOutput.connect(std::bind(&Controller::Profiler_StartingOutput, this));
@@ -104,8 +102,8 @@ void Controller::Configure() {
 	profiler->FinishedLineOutput.connect(std::bind(&Controller::Profiler_FinishedLineOutput, this));
 	profiler->StartingScopeOutput.connect(std::bind(&Controller::Profiler_StartingScopeOutput, this));
 	profiler->FinishedScopeOutput.connect(std::bind(&Controller::Profiler_FinishedScopeOutput, this));
-	profiler->EmitLine.connect(std::bind(&Controller::Profiler_EmitLine, this, _1));
-	profiler->EmitScope.connect(std::bind(&Controller::Profiler_EmitScope, this, _1));
+	profiler->EmitLine.connect(std::bind(&Controller::Profiler_EmitLine, this, std::placeholders::_1));
+	profiler->EmitScope.connect(std::bind(&Controller::Profiler_EmitScope, this, std::placeholders::_1));
 }
 
 void Controller::Start() {
