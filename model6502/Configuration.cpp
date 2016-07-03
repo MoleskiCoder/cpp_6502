@@ -31,7 +31,7 @@ Configuration::Configuration(std::string path)
 	stopAddress = GetUShortValue("run.stopAddress");
 	stopAddressEnabled = stopAddress != 0;
 
-#if DEBUG
+#ifdef _DEBUG
 	disassemble = GetBooleanValue("debug.disassemble");
 	disassemblyLogPath = GetStringValue("debug.disassemblyLogPath");
 	debugFile = GetStringValue("debug.debugFile");

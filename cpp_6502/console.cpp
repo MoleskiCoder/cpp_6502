@@ -17,22 +17,22 @@ int main() {
 	Configuration configuration("C:\\github\\cs\\cs_6502\\sudoku.json");
 #endif
 #ifdef TEST_SUITE1
-	var configuration = new Model.Configuration("C:\\github\\cs\\cs_6502\\test_suite_one.json");
+	Configuration configuration("C:\\github\\cs\\cs_6502\\test_suite_one.json");
 #endif
 #ifdef TEST_SUITE2
-	var configuration = new Model.Configuration("C:\\github\\cs\\cs_6502\\test_suite_two.json");
+	Configuration configuration("C:\\github\\cs\\cs_6502\\test_suite_two.json");
 #endif
 #ifdef TEST_SUITE_65C02
-	var configuration = new Model.Configuration("C:\\github\\cs\\cs_6502\\test_suite_65c02.json");
+	Configuration configuration("C:\\github\\cs\\cs_6502\\test_suite_65c02.json");
 #endif
 #ifdef EHBASIC
-	var configuration = new Model.Configuration("C:\\github\\cs\\cs_6502\\ehbasic.json");
+	Configuration configuration("C:\\github\\cs\\cs_6502\\ehbasic.json");
 #endif
 #ifdef TALI_FORTH
-	var configuration = new Model.Configuration("C:\\github\\cs\\cs_6502\\tali.json");
+	Configuration configuration("C:\\github\\cs\\cs_6502\\tali.json");
 #endif
 #ifdef BBC_FORTH
-	var configuration = new Model.Configuration("C:\\github\\cs\\cs_6502\\bbc_forth.json");
+	Configuration configuration("C:\\github\\cs\\cs_6502\\bbc_forth.json");
 #endif
 
 	Controller controller(configuration);
@@ -67,17 +67,17 @@ int main() {
 
 	std::cout << std::endl << "** Stopped PC=" << std::setw(4) << std::setfill('0') << controller.processor->getPC();
 
-#if TEST_SUITE1
-	var test = controller.Processor.GetByte(0x0210);
+#ifdef TEST_SUITE1
+	auto test = controller.processor->GetByte(0x0210);
 	if (test == 0xff)
-		System.Console.Out.WriteLine("\n** success!!");
+		std::cout << std::endl << "** success!!";
 	else
-		System.Console.Out.WriteLine("\n** {0} failed!!", test);
+		std::cout << std::endl << "** " << std::hex << (int)test << " failed!!";
 #endif
 
-#if TEST_SUITE2
-	var test = controller.Processor.GetByte(0x0200);
-	System.Console.Out.WriteLine("\n**** Test={0:x2}", test);
+#ifdef TEST_SUITE2
+	auto test = controller.processor->GetByte(0x0200);
+	std::cout << std::endl << "** Test=" << std::hex << (int)test;
 #endif
 
 	std::cout << std::endl << std::endl << "Time taken " << seconds << std::endl;
