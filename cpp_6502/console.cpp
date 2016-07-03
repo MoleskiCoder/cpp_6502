@@ -53,7 +53,8 @@ int main() {
 	auto finish = controller.finishTime;
 
 	auto elapsedTime = finish - start;
-	auto seconds = std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count();
+	auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
+	auto seconds = (double)milliseconds * controller.processor->Milli;
 
 	auto cyclesPerSecond = cycles / seconds;
 	auto simulatedElapsed = cycles / hertz;
@@ -65,7 +66,7 @@ int main() {
 	auto hostHertz = controller.hostSpeed * controller.processor->Mega;
 	auto cyclesPerHostCycle = hostHertz / (cyclesPerSecond * holdProportion);
 
-	std::cout << std::endl << "** Stopped PC=" << std::setw(4) << std::setfill('0') << controller.processor->getPC();
+	std::cout << std::endl << "** Stopped PC=" << std::hex << std::setw(4) << std::setfill('0') << controller.processor->getPC();
 
 #ifdef TEST_SUITE1
 	auto test = controller.processor->GetByte(0x0210);
@@ -79,6 +80,8 @@ int main() {
 	auto test = controller.processor->GetByte(0x0200);
 	std::cout << std::endl << "** Test=" << std::hex << (int)test;
 #endif
+
+	std::cout << std::dec;
 
 	std::cout << std::endl << std::endl << "Time taken " << seconds << std::endl;
 	std::cout << std::endl << std::endl << "Cycles per second " << cyclesPerSecond << std::endl;
