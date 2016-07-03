@@ -17,10 +17,10 @@ System6502::System6502(ProcessorType level, double processorSpeed, clock_t pollI
 	cyclesPerMillisecond = cyclesPerSecond * Milli;
 	cyclesPerInterval = (uint64_t)(cyclesPerMillisecond * pollInterval);
 
-	Polling.push_back(std::bind(&System6502::System6502_Polling, this));
-	Starting.push_back(std::bind(&System6502::System6502_Starting, this));
-	Finished.push_back(std::bind(&System6502::System6502_Finished, this));
-	ExecutedInstruction.push_back(std::bind(&System6502::System6502_ExecutedInstruction, this, _1));
+	Polling.connect(std::bind(&System6502::System6502_Polling, this));
+	Starting.connect(std::bind(&System6502::System6502_Starting, this));
+	Finished.connect(std::bind(&System6502::System6502_Finished, this));
+	ExecutedInstruction.connect(std::bind(&System6502::System6502_ExecutedInstruction, this, _1));
 }
 
 void System6502::Initialise() {
@@ -44,25 +44,24 @@ void System6502::LockMemory(uint16_t offset, uint16_t length) {
 }
 
 void System6502::Run() {
-	FireDelegates(Starting);
+	Starting.fire(EventArgs());
 	__super::Run();
-	FireDelegates(Finished);
+	Finished.fire(EventArgs());
 }
 
 uint8_t System6502::GetByte(uint16_t offset) const {
 	auto content = memory[offset];
-	AddressEventArgs e(offset, content);
-	FireDelegates(ReadingByte, e);
+	ReadingByte.fire(AddressEventArgs(offset, content));
 	return content;
 }
 
 void System6502::SetByte(uint16_t offset, uint8_t value) {
 	AddressEventArgs e(offset, value);
 	if (locked[offset]) {
-		FireDelegates(InvalidWriteAttempt, e);
+		InvalidWriteAttempt.fire(e);
 	} else {
 		memory[offset] = value;
-		FireDelegates(WritingByte, e);
+		WritingByte.fire(e);
 	}
 }
 
@@ -72,14 +71,14 @@ void System6502::Execute(uint8_t cell) {
 	auto executingAddress = (uint16_t)(getPC() - 1);
 
 	AddressEventArgs e(executingAddress, cell);
-	FireDelegates(ExecutingInstruction, e);
+	ExecutingInstruction.fire(e);
 	__super::Execute(cell);
-	FireDelegates(ExecutedInstruction, e);
+	ExecutedInstruction.fire(e);
 }
 
 void System6502::CheckPoll() {
 	if ((getCycles() % cyclesPerInterval) == 0)
-		FireDelegates(Polling);
+		Polling.fire(EventArgs());
 }
 
 void System6502::System6502_ExecutedInstruction(const AddressEventArgs&) {

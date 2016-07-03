@@ -43,5 +43,11 @@
     <ClInclude Include="AddressEventArgs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Signal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EventArgs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

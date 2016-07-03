@@ -15,23 +15,23 @@ Profiler::Profiler(System6502& targetProcessor, Disassembly& disassemblerTarget,
 	addressCounts.fill(0);
 
 	if (countInstructions || profileAddresses)
-		processor.ExecutingInstruction.push_back(std::bind(&Profiler::Processor_ExecutingInstruction, this, _1));
+		processor.ExecutingInstruction.connect(std::bind(&Profiler::Processor_ExecutingInstruction, this, _1));
 	if (profileAddresses)
-		processor.ExecutedInstruction.push_back(std::bind(&Profiler::Processor_ExecutedInstruction, this, _1));
+		processor.ExecutedInstruction.connect(std::bind(&Profiler::Processor_ExecutedInstruction, this, _1));
 
 	BuildAddressScopes();
 }
 
 void Profiler::Generate() {
-	FireDelegates(StartingOutput);
+	StartingOutput.fire(EventArgs());
 	EmitProfileInformation();
-	FireDelegates(StartingOutput);
+	StartingOutput.fire(EventArgs());
 }
 
 void Profiler::EmitProfileInformation() {
 
 	{
-		FireDelegates(StartingLineOutput);
+		StartingLineOutput.fire(EventArgs());
 		// For each memory address
 		for (auto address = 0; address < 0x10000; ++address) {
 			// If there are any cycles associated
@@ -39,22 +39,22 @@ void Profiler::EmitProfileInformation() {
 			if (cycles > 0) {
 				// Dump a profile/disassembly line
 				auto source = disassembler.Disassemble(address);
-				FireDelegates(EmitLine, ProfileLineEventArgs(source, cycles));
+				EmitLine.fire(ProfileLineEventArgs(source, cycles));
 			}
 		}
-		FireDelegates(FinishedLineOutput);
+		FinishedLineOutput.fire(EventArgs());
 	}
 
 	{
-		FireDelegates(StartingScopeOutput);
+		StartingScopeOutput.fire(EventArgs());
 		for (auto& scopeCycle : scopeCycles) {
 			auto name = scopeCycle.first;
 			auto cycles = scopeCycle.second;
 			auto namedAddress = (size_t)symbols.getAddresses().find(name)->second;
 			auto count = addressCounts[namedAddress];
-			FireDelegates(EmitScope, ProfileScopeEventArgs(name, cycles, count));
+			EmitScope.fire(ProfileScopeEventArgs(name, cycles, count));
 		}
-		FireDelegates(FinishedScopeOutput);
+		FinishedScopeOutput.fire(EventArgs());
 	}
 }
 

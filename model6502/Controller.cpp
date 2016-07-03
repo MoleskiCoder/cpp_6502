@@ -60,16 +60,16 @@ void Controller::Configure() {
 	processor.reset(new System6502(processorLevel, speed, pollIntervalMilliseconds));
 
 	if (disassemble || stopAddressEnabled || stopWhenLoopDetected || profileAddresses)
-		processor->ExecutingInstruction.push_back(std::bind(&Controller::Processor_ExecutingInstruction, this, _1));
+		processor->ExecutingInstruction.connect(std::bind(&Controller::Processor_ExecutingInstruction, this, _1));
 	if (stopBreak)
-		processor->ExecutedInstruction.push_back(std::bind(&Controller::Processor_ExecutedInstruction, this, _1));
+		processor->ExecutedInstruction.connect(std::bind(&Controller::Processor_ExecutedInstruction, this, _1));
 
-	processor->WritingByte.push_back(std::bind(&Controller::Processor_WritingByte, this, _1));
-	processor->ReadingByte.push_back(std::bind(&Controller::Processor_ReadingByte, this, _1));
-	processor->InvalidWriteAttempt.push_back(std::bind(&Controller::Processor_InvalidWriteAttempt, this, _1));
-	processor->Starting.push_back(std::bind(&Controller::Processor_Starting, this));
-	processor->Finished.push_back(std::bind(&Controller::Processor_Finished, this));
-	processor->Polling.push_back(std::bind(&Controller::Processor_Polling, this));
+	processor->WritingByte.connect(std::bind(&Controller::Processor_WritingByte, this, _1));
+	processor->ReadingByte.connect(std::bind(&Controller::Processor_ReadingByte, this, _1));
+	processor->InvalidWriteAttempt.connect(std::bind(&Controller::Processor_InvalidWriteAttempt, this, _1));
+	processor->Starting.connect(std::bind(&Controller::Processor_Starting, this));
+	processor->Finished.connect(std::bind(&Controller::Processor_Finished, this));
+	processor->Polling.connect(std::bind(&Controller::Processor_Polling, this));
 
 	processor->Initialise();
 
@@ -95,17 +95,17 @@ void Controller::Configure() {
 	symbols.reset(new Symbols(debugFile));
 
 	disassembler.reset(new Disassembly(*processor, *symbols));
-	Disassembled.push_back(std::bind(&Controller::Controller_Disassembled, this, _1));
+	Disassembled.connect(std::bind(&Controller::Controller_Disassembled, this, _1));
 
 	profiler.reset(new Profiler(*processor, *disassembler, *symbols, countInstructions, profileAddresses));
-	profiler->StartingOutput.push_back(std::bind(&Controller::Profiler_StartingOutput, this));
-	profiler->FinishedOutput.push_back(std::bind(&Controller::Profiler_FinishedOutput, this));
-	profiler->StartingLineOutput.push_back(std::bind(&Controller::Profiler_StartingLineOutput, this));
-	profiler->FinishedLineOutput.push_back(std::bind(&Controller::Profiler_FinishedLineOutput, this));
-	profiler->StartingScopeOutput.push_back(std::bind(&Controller::Profiler_StartingScopeOutput, this));
-	profiler->FinishedScopeOutput.push_back(std::bind(&Controller::Profiler_FinishedScopeOutput, this));
-	profiler->EmitLine.push_back(std::bind(&Controller::Profiler_EmitLine, this, _1));
-	profiler->EmitScope.push_back(std::bind(&Controller::Profiler_EmitScope, this, _1));
+	profiler->StartingOutput.connect(std::bind(&Controller::Profiler_StartingOutput, this));
+	profiler->FinishedOutput.connect(std::bind(&Controller::Profiler_FinishedOutput, this));
+	profiler->StartingLineOutput.connect(std::bind(&Controller::Profiler_StartingLineOutput, this));
+	profiler->FinishedLineOutput.connect(std::bind(&Controller::Profiler_FinishedLineOutput, this));
+	profiler->StartingScopeOutput.connect(std::bind(&Controller::Profiler_StartingScopeOutput, this));
+	profiler->FinishedScopeOutput.connect(std::bind(&Controller::Profiler_FinishedScopeOutput, this));
+	profiler->EmitLine.connect(std::bind(&Controller::Profiler_EmitLine, this, _1));
+	profiler->EmitScope.connect(std::bind(&Controller::Profiler_EmitScope, this, _1));
 }
 
 void Controller::Start() {
@@ -152,7 +152,7 @@ void Controller::Processor_ExecutingInstruction(const AddressEventArgs& addressE
 
 		output << disassembler->Disassemble(address);
 
-		FireDelegates(Disassembled, output.str());
+		Disassembled.fire(DisassemblyEventArgs(output.str()));
 	}
 
 	if (stopAddressEnabled && stopAddress == address)
@@ -201,7 +201,7 @@ void Controller::Processor_InvalidWriteAttempt(const AddressEventArgs& addressEv
 	auto address = addressEvent.getAddress();
 	auto cell = addressEvent.getCell();
 	output << std::hex << std::setw(4) << address << ":" << std::setw(2) << cell << std::endl;
-	FireDelegates(Disassembled, output.str());
+	Disassembled.fire(DisassemblyEventArgs(output.str()));
 }
 
 void Controller::Processor_Polling() {
@@ -297,7 +297,7 @@ void Controller::HandleByteWritten(uint8_t cell) {
 #if _DEBUG
 	std::ostringstream output;
 	output << "Write: " << disassembler->Dump_ByteValue(cell) << ":" << character << std::endl;
-	FireDelegates(Disassembled, output.str());
+	Disassembled.fire(DisassemblyEventArgs(output.str()));
 #endif
 }
 
@@ -306,7 +306,7 @@ void Controller::HandleByteRead(uint8_t cell) {
 #if _DEBUG
 	std::ostringstream output;
 	output << "Read: " << disassembler->Dump_ByteValue(cell) << ":" << character << std::endl;
-	FireDelegates(Disassembled, output.str());
+	Disassembled.fire(DisassemblyEventArgs(output.str()));
 #endif
 }
 
@@ -319,7 +319,7 @@ void Controller::Profiler_EmitScope(const ProfileScopeEventArgs& e) {
 	output << "\t[";
 	PrintPercentage(output, proportion * 100);
 	output << "][" << std::setw(9) << cycles << "][" << count << "]\t" << scope << std::endl;
-	FireDelegates(Disassembled, output.str());
+	Disassembled.fire(DisassemblyEventArgs(output.str()));
 }
 
 void Controller::Profiler_EmitLine(const ProfileLineEventArgs& e) {
@@ -330,7 +330,7 @@ void Controller::Profiler_EmitLine(const ProfileLineEventArgs& e) {
 	output << "\t[";
 	PrintPercentage(output, proportion * 100);
 	output << "][" << std::setw(9) << cycles << "]\t" << source << std::endl;
-	FireDelegates(Disassembled, output.str());
+	Disassembled.fire(DisassemblyEventArgs(output.str()));
 }
 
 void Controller::Profiler_FinishedScopeOutput() {

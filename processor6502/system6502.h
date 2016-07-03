@@ -8,7 +8,9 @@
 #include <functional>
 
 #include "mos6502.h"
+#include "EventArgs.h"
 #include "AddressEventArgs.h"
+#include "Signal.h"
 
 class System6502 : public MOS6502
 {
@@ -29,22 +31,16 @@ public:
 
 	virtual void Run();
 
-	typedef std::function<void(const AddressEventArgs&)> address_event_f;
-	typedef std::function<void()> void_f;
+	Signal<EventArgs> Starting;
+	Signal<EventArgs> Finished;
 
-	typedef std::vector<address_event_f> address_signal_t;
-	typedef std::vector<void_f> void_signal_t;
+	Signal<EventArgs> Polling;
 
-	void_signal_t Starting;
-	void_signal_t Finished;
-
-	void_signal_t Polling;
-
-	address_signal_t InvalidWriteAttempt;
-	address_signal_t WritingByte;
-	address_signal_t ReadingByte;
-	address_signal_t ExecutingInstruction;
-	address_signal_t ExecutedInstruction;
+	Signal<AddressEventArgs> InvalidWriteAttempt;
+	Signal<AddressEventArgs> WritingByte;
+	Signal<AddressEventArgs> ReadingByte;
+	Signal<AddressEventArgs> ExecutingInstruction;
+	Signal<AddressEventArgs> ExecutedInstruction;
 
 	virtual uint8_t GetByte(uint16_t offset) const;
 	virtual void SetByte(uint16_t offset, uint8_t value);
@@ -53,18 +49,6 @@ protected:
 	virtual void Execute(uint8_t cell);
 
 private:
-	static void FireDelegates(const address_signal_t& delegates, const AddressEventArgs& e) {
-		if (!delegates.empty())
-			for (auto& delegate : delegates)
-				delegate(e);
-	}
-
-	static void FireDelegates(const void_signal_t& delegates) {
-		if (!delegates.empty())
-			for (auto& delegate : delegates)
-				delegate();
-	}
-
 	void ClearMemory();
 	uint16_t LoadMemory(std::string path, uint16_t offset);
 

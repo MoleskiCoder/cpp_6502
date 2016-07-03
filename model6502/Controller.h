@@ -8,6 +8,7 @@
 #include <functional>
 
 #include <system6502.h>
+#include <Signal.h>
 
 #include "Profiler.h"
 #include "Symbols.h"
@@ -81,22 +82,12 @@ public:
 public:
 	Controller(Configuration configuration);
 
-	typedef std::function<void(const DisassemblyEventArgs&)> disassembly_event_f;
-	typedef std::vector<disassembly_event_f> disassembly_signal_t;
-
-	disassembly_signal_t Disassembled;
+	Signal<DisassemblyEventArgs> Disassembled;
 
 	void Configure();
 	void Start();
 
 private:
-
-	static void FireDelegates(const disassembly_signal_t& delegates, const DisassemblyEventArgs& e) {
-		if (!delegates.empty())
-			for (auto& delegate : delegates)
-				delegate(e);
-	}
-
 	void Processor_Starting();
 	void Processor_Finished();
 
