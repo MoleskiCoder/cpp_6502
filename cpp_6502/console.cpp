@@ -81,15 +81,16 @@ int main() {
 	std::cout << std::endl << "** Test=" << std::hex << (int)test;
 #endif
 
-	std::cout << std::dec;
+	std::cout << std::dec << std::fixed;
+	std::cout.imbue(std::locale(""));
 
-	std::cout << std::endl << std::endl << "Time taken " << seconds << std::endl;
-	std::cout << std::endl << std::endl << "Cycles per second " << cyclesPerSecond << std::endl;
-	std::cout << std::endl << std::endl << "Speedup over " << controller.speed << "Mhz 6502 " << speedup << std::endl;
+	std::cout << std::endl << std::endl << "Time taken " << seconds << " seconds" << std::endl;
+	std::cout << std::endl << "Cycles per second " << cyclesPerSecond << std::endl;
+	std::cout << std::endl << "Speedup over " << controller.speed << "Mhz 6502 " << speedup << std::endl;
 	std::cout << std::endl << std::endl << "Simulated cycles used " << cycles << std::endl;
-	std::cout << std::endl << std::endl << "Held cycles " << heldCycles << std::endl;
-	std::cout << std::endl << std::endl << "Held cycle difference " << cycleDifference << std::endl;
-	std::cout << std::endl << std::endl << "Held proportion " << holdProportion << std::endl;
-	std::cout << std::endl << std::endl << "Cycles per host cycle (code efficiency!) " << cyclesPerHostCycle << std::endl;
-	std::cout << std::endl << std::endl << "Simulated time taken " << simulatedElapsed << std::endl;
+	std::cout << std::endl << "Held cycles " << heldCycles << std::endl;
+	std::cout << std::endl << "Held cycle difference " << cycleDifference << std::endl;
+	std::cout << std::endl << "Held proportion " << holdProportion << std::endl;
+	std::cout << std::endl << "Cycles per host cycle (code efficiency!) " << cyclesPerHostCycle << std::endl;
+	std::cout << std::endl << "Simulated time taken " << simulatedElapsed << std::endl << std::endl;
 }
