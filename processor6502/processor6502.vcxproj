@@ -157,6 +157,7 @@
     <ClInclude Include="AddressEventArgs.h" />
     <ClInclude Include="AddressingMode.h" />
     <ClInclude Include="EventArgs.h" />
+    <ClInclude Include="Memory.h" />
     <ClInclude Include="mos6502.h" />
     <ClInclude Include="ProcessorType.h" />
     <ClInclude Include="Signal.h" />

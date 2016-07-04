@@ -92,7 +92,6 @@ private:
 	void Processor_Finished();
 
 	void Processor_ExecutingInstruction(const AddressEventArgs& addressEvent);
-	void Processor_ExecutedInstruction(const AddressEventArgs& addressEvent);
 
 	void Controller_Disassembled(const DisassemblyEventArgs& e);
 

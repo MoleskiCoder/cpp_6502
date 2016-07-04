@@ -121,7 +121,7 @@ uint16_t MOS6502::MakeWord(uint8_t low, uint8_t high) {
 
 ////
 
-#define BIND(x)	std::bind(&MOS6502:: x, this)
+#define BIND(method)	std::bind(&MOS6502:: method, this)
 
 void MOS6502::Install6502Instructions() {
 	overlay6502 = {
@@ -224,17 +224,19 @@ void MOS6502::OverlayInstructionSet(std::array<Instruction, 0x100> overlay, bool
 
 ////
 
-void MOS6502::UpdateZeroFlag(uint8_t datum) {
-	p.zero = datum == 0;
+bool MOS6502::UpdateZeroFlag(uint8_t datum) {
+	return p.zero = datum == 0;
 }
 
-void MOS6502::UpdateNegativeFlag(int8_t datum) {
-	p.negative = datum < 0;
+bool MOS6502::UpdateNegativeFlag(int8_t datum) {
+	return p.negative = datum < 0;
 }
 
 void MOS6502::UpdateZeroNegativeFlags(uint8_t datum) {
-	UpdateZeroFlag(datum);
-	UpdateNegativeFlag((int8_t)datum);
+	if (UpdateZeroFlag(datum))
+		p.negative = false;
+	else
+		UpdateNegativeFlag((int8_t)datum);
 }
 
 ////

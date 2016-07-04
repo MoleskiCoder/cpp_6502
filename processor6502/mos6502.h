@@ -84,8 +84,8 @@ private:
 	void OverlayInstructionSet(std::array<Instruction, 0x100> overlay);
 	void OverlayInstructionSet(std::array<Instruction, 0x100> overlay, bool includeIllegal);
 
-	void UpdateZeroFlag(uint8_t datum);
-	void UpdateNegativeFlag(int8_t datum);
+	bool UpdateZeroFlag(uint8_t datum);
+	bool UpdateNegativeFlag(int8_t datum);
 	void UpdateZeroNegativeFlags(uint8_t datum);
 
 	void PushByte(uint8_t value);

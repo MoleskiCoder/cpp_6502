@@ -57,14 +57,12 @@ void Controller::Configure() {
 
 	processor.reset(new System6502(processorLevel, speed, pollIntervalMilliseconds));
 
-	if (disassemble || stopAddressEnabled || stopWhenLoopDetected || profileAddresses)
+	if (disassemble || stopAddressEnabled || stopWhenLoopDetected || profileAddresses || stopBreak)
 		processor->ExecutingInstruction.connect(std::bind(&Controller::Processor_ExecutingInstruction, this, std::placeholders::_1));
-	if (stopBreak)
-		processor->ExecutedInstruction.connect(std::bind(&Controller::Processor_ExecutedInstruction, this, std::placeholders::_1));
 
-	processor->WritingByte.connect(std::bind(&Controller::Processor_WritingByte, this, std::placeholders::_1));
-	processor->ReadingByte.connect(std::bind(&Controller::Processor_ReadingByte, this, std::placeholders::_1));
-	processor->InvalidWriteAttempt.connect(std::bind(&Controller::Processor_InvalidWriteAttempt, this, std::placeholders::_1));
+	processor->getMemory().WritingByte.connect(std::bind(&Controller::Processor_WritingByte, this, std::placeholders::_1));
+	processor->getMemory().ReadingByte.connect(std::bind(&Controller::Processor_ReadingByte, this, std::placeholders::_1));
+	processor->getMemory().InvalidWriteAttempt.connect(std::bind(&Controller::Processor_InvalidWriteAttempt, this, std::placeholders::_1));
 	processor->Starting.connect(std::bind(&Controller::Processor_Starting, this));
 	processor->Finished.connect(std::bind(&Controller::Processor_Finished, this));
 	processor->Polling.connect(std::bind(&Controller::Processor_Polling, this));
@@ -73,17 +71,17 @@ void Controller::Configure() {
 
 	auto bbc = !bbcLanguageRomPath.empty() && !bbcOSRomPath.empty();
 	if (bbc) {
-		processor->LoadRom(bbcOSRomPath, BbcOSLoadAddress);
-		processor->LoadRom(bbcLanguageRomPath, BbcOSLanguageAddress);
+		processor->getMemory().LoadRom(bbcOSRomPath, BbcOSLoadAddress);
+		processor->getMemory().LoadRom(bbcLanguageRomPath, BbcOSLanguageAddress);
 	}
 
 	auto rom = !romPath.empty();
 	if (rom)
-		processor->LoadRom(romPath, romLoadAddress);
+		processor->getMemory().LoadRom(romPath, romLoadAddress);
 
 	auto ram = !ramPath.empty();
 	if (ram)
-		processor->LoadRam(ramPath, ramLoadAddress);
+		processor->getMemory().LoadRam(ramPath, ramLoadAddress);
 
 	if (resetStart)
 		processor->Reset();
@@ -162,9 +160,7 @@ void Controller::Processor_ExecutingInstruction(const AddressEventArgs& addressE
 		else
 			oldPC = processor->getPC();
 	}
-}
 
-void Controller::Processor_ExecutedInstruction(const AddressEventArgs& addressEvent) {
 	if (stopBreak && breakInstruction == addressEvent.getCell())
 		processor->setProceed(false);
 }
@@ -222,8 +218,18 @@ void Controller::BufferDiagnosticsOutput(std::string output) {
 }
 
 void Controller::HandleByteWritten(uint8_t cell) {
+
+#ifdef _DEBUG
+	std::ostringstream output;
+#endif
+
 	auto character = (char)cell;
 	if (bbcVduEmulation) {
+
+#ifdef _DEBUG
+		output << std::endl << "Write (BBC): ";
+#endif
+
 		switch (cell)
 		{
 		case 0:
@@ -235,29 +241,49 @@ void Controller::HandleByteWritten(uint8_t cell) {
 		case 6:
 			break;
 		case 7:
+#ifdef _DEBUG
+			output << "7 Beep";
+#endif
 			//System.Console.Beep();
 			break;
 		case 8:
+#ifdef _DEBUG
+			output << "8 Cursor left";
+#endif
 			//if (System.Console.CursorLeft > 0)
 			//	--System.Console.CursorLeft;
 			break;
 		case 9:
+#ifdef _DEBUG
+			output << "9 Cursor right";
+#endif
 			//if (System.Console.CursorLeft < System.Console.LargestWindowWidth)
 			//	++System.Console.CursorLeft;
 			break;
 		case 10:
-			//if (System.Console.CursorTop < System.Console.LargestWindowHeight)
-			//	++System.Console.CursorTop;
+#ifdef _DEBUG
+			output << "10 Cursor down (LF)";
+#endif
+			_putch(character);
 			break;
 		case 11:
+#ifdef _DEBUG
+			output << "11 Cursor up";
+#endif
 			//if (System.Console.CursorTop > 0)
 			//	--System.Console.CursorTop;
 			break;
 		case 12:
+#ifdef _DEBUG
+			output << "12 CLS";
+#endif
 			//System.Console.Clear();
 			break;
 		case 13:
-			//System.Console.CursorLeft = 0;
+#ifdef _DEBUG
+			output << "13 CR";
+#endif
+			_putch(character);
 			break;
 		case 14:
 		case 15:
@@ -275,26 +301,39 @@ void Controller::HandleByteWritten(uint8_t cell) {
 		case 27:
 		case 28:
 		case 29:
+#ifdef _DEBUG
+			output << (int)cell << " Unimplemented";
+#endif
 			break;
 		case 30:
+#ifdef _DEBUG
+			output << "30 Home";
+#endif
 			//System.Console.SetCursorPosition(0, 0);
 			break;
 		case 31:
 			break;
 		case 127:
+#ifdef _DEBUG
+			output << "127 Backspace";
+#endif
 			//--System.Console.CursorLeft;
 			//System.Console.Write(character);
 			break;
 		default:
+#ifdef _DEBUG
+			output << disassembler->Dump_ByteValue(cell) << ":" << character;
+#endif
 			_putch(character);
 			break;
 		}
 	} else {
+#ifdef _DEBUG
+		output << std::endl << "Write: " << disassembler->Dump_ByteValue(cell) << ":" << character;
+#endif
 		_putch(character);
 	}
-#if _DEBUG
-	std::ostringstream output;
-	output << "Write: " << disassembler->Dump_ByteValue(cell) << ":" << character << std::endl;
+#ifdef _DEBUG
 	Disassembled.fire(DisassemblyEventArgs(output.str()));
 #endif
 }
