@@ -77,7 +77,7 @@ void System6502::System6502_Finished() {
 void System6502::Throttle() {
 	auto now = std::chrono::high_resolution_clock::now();
 	auto elapsed = now - startTime;
-	auto timerCurrent = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
+	auto timerCurrent = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 
 	auto cyclesAllowed = timerCurrent * cyclesPerMillisecond;
 	auto cyclesMismatch = getCycles() - cyclesAllowed;
