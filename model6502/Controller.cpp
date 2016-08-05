@@ -116,7 +116,8 @@ void Controller::Processor_Starting() {
 
 void Controller::Processor_Finished() {
 	finishTime = std::chrono::system_clock::now();
-	profiler->Generate();
+	if (profileAddresses)
+		profiler->Generate();
 }
 
 void Controller::Processor_ExecutingInstruction(const AddressEventArgs& addressEvent) {
