@@ -41,8 +41,7 @@ public:
 		AddressEventArgs e(offset, value);
 		if (locked[offset]) {
 			InvalidWriteAttempt.fire(e);
-		}
-		else {
+		} else {
 			memory[offset] = value;
 			WritingByte.fire(e);
 		}
