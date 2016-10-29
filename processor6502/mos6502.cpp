@@ -233,10 +233,10 @@ bool MOS6502::UpdateNegativeFlag(int8_t datum) {
 }
 
 void MOS6502::UpdateZeroNegativeFlags(uint8_t datum) {
-	if (UpdateZeroFlag(datum))
-		p.negative = false;
+	if (UpdateNegativeFlag((int8_t)datum))
+		p.zero = false;
 	else
-		UpdateNegativeFlag((int8_t)datum);
+		UpdateZeroFlag(datum);
 }
 
 ////
