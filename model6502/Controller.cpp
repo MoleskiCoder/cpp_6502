@@ -57,8 +57,14 @@ void Controller::Configure() {
 
 	processor.reset(new System6502(processorLevel, speed, pollIntervalMilliseconds));
 
-	if (disassemble || stopAddressEnabled || stopWhenLoopDetected || profileAddresses || stopBreak)
-		processor->ExecutingInstruction.connect(std::bind(&Controller::Processor_ExecutingInstruction, this, std::placeholders::_1));
+	if (disassemble)
+		processor->ExecutingInstruction.connect(std::bind(&Controller::Processor_ExecutingInstruction_Disassemble, this, std::placeholders::_1));
+	if (stopAddressEnabled)
+		processor->ExecutingInstruction.connect(std::bind(&Controller::Processor_ExecutingInstruction_StopAddress, this, std::placeholders::_1));
+	if (stopWhenLoopDetected)
+		processor->ExecutingInstruction.connect(std::bind(&Controller::Processor_ExecutingInstruction_StopLoop, this, std::placeholders::_1));
+	if (stopBreak)
+		processor->ExecutingInstruction.connect(std::bind(&Controller::Processor_ExecutingInstruction_StopBreak, this, std::placeholders::_1));
 
 	processor->getMemory().WritingByte.connect(std::bind(&Controller::Processor_WritingByte, this, std::placeholders::_1));
 	processor->getMemory().ReadingByte.connect(std::bind(&Controller::Processor_ReadingByte, this, std::placeholders::_1));
@@ -120,49 +126,51 @@ void Controller::Processor_Finished() {
 		profiler->Generate();
 }
 
-void Controller::Processor_ExecutingInstruction(const AddressEventArgs& addressEvent) {
+void Controller::Processor_ExecutingInstruction_Disassemble(const AddressEventArgs& addressEvent) {
 
 	auto address = addressEvent.getAddress();
 	auto cell = addressEvent.getCell();
 
-	if (disassemble) {
+	const auto& instruction = processor->getInstruction(cell);
+	auto mode = instruction.mode;
 
-		const auto& instruction = processor->getInstruction(cell);
-		auto mode = instruction.mode;
+	std::ostringstream output;
 
-		std::ostringstream output;
+	output << std::endl << "[" << std::setw(9) << std::setfill('0') << processor->getCycles() << "] ";
+	output << std::hex;
+	output << "PC=" << std::setw(4) << std::setfill('0') << address << ":";
+	output << "P=" << (std::string)processor->getP() << ", ";
+	output << std::setw(2);
+	output << "A=" << (int)processor->getA() << ", ";
+	output << "X=" << (int)processor->getX() << ", ";
+	output << "Y=" << (int)processor->getY() << ", ";
+	output << "S=" << (int)processor->getS() << "\t";
 
-		output << std::endl << "[" << std::setw(9) << std::setfill('0') << processor->getCycles() << "] ";
-		output << std::hex;
-		output << "PC=" << std::setw(4) << std::setfill('0') << address << ":";
-		output << "P=" << (std::string)processor->getP() << ", ";
-		output << std::setw(2);
-		output << "A=" << (int)processor->getA() << ", ";
-		output << "X=" << (int)processor->getX() << ", ";
-		output << "Y=" << (int)processor->getY() << ", ";
-		output << "S=" << (int)processor->getS() << "\t";
+	output << disassembler->Dump_ByteValue(cell);
+	output << disassembler->DumpBytes(mode, address + 1);
 
-		output << disassembler->Dump_ByteValue(cell);
-		output << disassembler->DumpBytes(mode, address + 1);
+	output << "\t ";
 
-		output << "\t ";
+	output << disassembler->Disassemble(address);
 
-		output << disassembler->Disassemble(address);
+	Disassembled.fire(DisassemblyEventArgs(output.str()));
+}
 
-		Disassembled.fire(DisassemblyEventArgs(output.str()));
-	}
-
-	if (stopAddressEnabled && stopAddress == address)
+void Controller::Processor_ExecutingInstruction_StopAddress(const AddressEventArgs& addressEvent) {
+	auto address = addressEvent.getAddress();
+	if (stopAddress == address)
 		processor->setProceed(false);
+}
 
-	if (stopWhenLoopDetected) {
-		if (oldPC == processor->getPC())
-			processor->setProceed(false);
-		else
-			oldPC = processor->getPC();
-	}
+void Controller::Processor_ExecutingInstruction_StopLoop(const AddressEventArgs& addressEvent) {
+	if (oldPC == processor->getPC())
+		processor->setProceed(false);
+	else
+		oldPC = processor->getPC();
+}
 
-	if (stopBreak && breakInstruction == addressEvent.getCell())
+void Controller::Processor_ExecutingInstruction_StopBreak(const AddressEventArgs& addressEvent) {
+	if (breakInstruction == addressEvent.getCell())
 		processor->setProceed(false);
 }
 

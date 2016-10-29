@@ -54,8 +54,9 @@ public:
 private:
 	void EmitProfileInformation();
 
-	void Processor_ExecutingInstruction(const AddressEventArgs& addressEvent);
-	void Processor_ExecutedInstruction(const AddressEventArgs& addressEvent);
+	void Processor_ExecutingInstruction_ProfileAddresses(const AddressEventArgs& addressEvent);
+	void Processor_ExecutingInstruction_CountInstructions(const AddressEventArgs& addressEvent);
+	void Processor_ExecutedInstruction_ProfileAddresses(const AddressEventArgs& addressEvent);
 
 	void BuildAddressScopes();
 };

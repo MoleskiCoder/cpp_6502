@@ -91,7 +91,10 @@ private:
 	void Processor_Starting();
 	void Processor_Finished();
 
-	void Processor_ExecutingInstruction(const AddressEventArgs& addressEvent);
+	void Processor_ExecutingInstruction_Disassemble(const AddressEventArgs& addressEvent);
+	void Processor_ExecutingInstruction_StopAddress(const AddressEventArgs& addressEvent);
+	void Processor_ExecutingInstruction_StopLoop(const AddressEventArgs& addressEvent);
+	void Processor_ExecutingInstruction_StopBreak(const AddressEventArgs& addressEvent);
 
 	void Controller_Disassembled(const DisassemblyEventArgs& e);
 

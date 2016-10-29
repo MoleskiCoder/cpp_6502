@@ -12,10 +12,12 @@ Profiler::Profiler(System6502& targetProcessor, Disassembly& disassemblerTarget,
 	addressProfiles.fill(0);
 	addressCounts.fill(0);
 
-	if (countInstructions || profileAddresses)
-		processor.ExecutingInstruction.connect(std::bind(&Profiler::Processor_ExecutingInstruction, this, std::placeholders::_1));
 	if (profileAddresses)
-		processor.ExecutedInstruction.connect(std::bind(&Profiler::Processor_ExecutedInstruction, this, std::placeholders::_1));
+		processor.ExecutingInstruction.connect(std::bind(&Profiler::Processor_ExecutingInstruction_ProfileAddresses, this, std::placeholders::_1));
+	if (countInstructions)
+		processor.ExecutingInstruction.connect(std::bind(&Profiler::Processor_ExecutingInstruction_CountInstructions, this, std::placeholders::_1));
+	if (profileAddresses)
+		processor.ExecutedInstruction.connect(std::bind(&Profiler::Processor_ExecutedInstruction_ProfileAddresses, this, std::placeholders::_1));
 
 	BuildAddressScopes();
 }
@@ -56,25 +58,26 @@ void Profiler::EmitProfileInformation() {
 	}
 }
 
-void Profiler::Processor_ExecutingInstruction(const AddressEventArgs& addressEvent) {
-	if (profileAddresses) {
-		priorCycleCount = processor.getCycles();
-		addressCounts[addressEvent.getAddress()]++;
-	}
-	if (countInstructions)
-		++instructionCounts[addressEvent.getCell()];
+void Profiler::Processor_ExecutingInstruction_ProfileAddresses(const AddressEventArgs& addressEvent) {
+	assert(profileAddresses);
+	priorCycleCount = processor.getCycles();
+	addressCounts[addressEvent.getAddress()]++;
 }
 
-void Profiler::Processor_ExecutedInstruction(const AddressEventArgs& addressEvent) {
-	if (profileAddresses) {
-		auto cycles = processor.getCycles() - priorCycleCount;
-		addressProfiles[addressEvent.getAddress()] += cycles;
-		auto addressScope = addressScopes[addressEvent.getAddress()];
-		if (!addressScope.empty()) {
-			if (scopeCycles.find(addressScope) == scopeCycles.end())
-				scopeCycles[addressScope] = 0;
-			scopeCycles[addressScope] += cycles;
-		}
+void Profiler::Processor_ExecutingInstruction_CountInstructions(const AddressEventArgs& addressEvent) {
+	assert(countInstructions);
+	++instructionCounts[addressEvent.getCell()];
+}
+
+void Profiler::Processor_ExecutedInstruction_ProfileAddresses(const AddressEventArgs& addressEvent) {
+	assert(profileAddresses);
+	auto cycles = processor.getCycles() - priorCycleCount;
+	addressProfiles[addressEvent.getAddress()] += cycles;
+	auto addressScope = addressScopes[addressEvent.getAddress()];
+	if (!addressScope.empty()) {
+		if (scopeCycles.find(addressScope) == scopeCycles.end())
+			scopeCycles[addressScope] = 0;
+		scopeCycles[addressScope] += cycles;
 	}
 }
 
