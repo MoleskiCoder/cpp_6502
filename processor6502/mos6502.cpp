@@ -473,14 +473,14 @@ void MOS6502::BIT(uint8_t data) {
 void MOS6502::TSB(uint16_t address) {
 	auto content = GetByte(address);
 	BIT_immediate(content);
-	auto result = content | a;
+	uint8_t result = content | a;
 	SetByte(address, result);
 }
 
 void MOS6502::TRB(uint16_t address) {
 	auto content = GetByte(address);
 	BIT_immediate(content);
-	auto result = content & ~a;
+	uint8_t result = content & ~a;
 	SetByte(address, result);
 }
 
@@ -499,7 +499,7 @@ uint8_t MOS6502::ROL(uint8_t data) {
 
 	p.carry = (data & 0x80) != 0;
 
-	auto result = data << 1;
+	uint8_t result = data << 1;
 
 	if (carry)
 		result |= 1;
@@ -514,7 +514,7 @@ void MOS6502::ASL(uint16_t offset) {
 }
 
 uint8_t MOS6502::ASL(uint8_t data) {
-	auto result = data << 1;
+	uint8_t result = data << 1;
 	UpdateZeroNegativeFlags(result);
 	p.carry = (data & 0x80) != 0;
 	return result;
@@ -541,11 +541,11 @@ void MOS6502::SBC_b(uint8_t data) {
 	auto carry = p.carry ? 0 : 1;
 	auto difference = a - data - carry;
 
-	UpdateZeroNegativeFlags(difference);
+	UpdateZeroNegativeFlags((uint8_t)difference);
 	p.overflow = ((a ^ data) & (a ^ difference) & 0x80) != 0;
-	p.carry = HighByte(difference) == 0;
+	p.carry = HighByte((uint16_t)difference) == 0;
 
-	a = difference;
+	a = (uint8_t)difference;
 }
 
 void MOS6502::SBC_d(uint8_t data) {
@@ -556,9 +556,9 @@ void MOS6502::SBC_d(uint8_t data) {
 		UpdateZeroNegativeFlags((uint8_t)difference);
 
 	p.overflow = ((a ^ data) & (a ^ difference) & 0x80) != 0;
-	p.carry = HighByte(difference) == 0;
+	p.carry = HighByte((uint16_t)difference) == 0;
 
-	uint8_t low = LowNybble(a) - LowNybble(data) - carry;
+	auto low = (uint8_t)(LowNybble(a) - LowNybble(data) - carry);
 
 	auto lowNegative = (int8_t)low < 0;
 	if (lowNegative)

@@ -162,7 +162,7 @@ void Controller::Processor_ExecutingInstruction_StopAddress(const AddressEventAr
 		processor->setProceed(false);
 }
 
-void Controller::Processor_ExecutingInstruction_StopLoop(const AddressEventArgs& addressEvent) {
+void Controller::Processor_ExecutingInstruction_StopLoop(const AddressEventArgs&) {
 	if (oldPC == processor->getPC())
 		processor->setProceed(false);
 	else
