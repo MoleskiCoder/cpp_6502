@@ -75,9 +75,16 @@ uint8_t ConfigurationReader::GetByteValue(const boost::property_tree::ptree& roo
 
 uint16_t ConfigurationReader::GetUShortValue(const boost::property_tree::ptree& root, std::string path, uint16_t defaultValue) {
 	std::stringstream conversion_stream;
-	conversion_stream << std::hex << GetStringValue(root, path);
+	auto read = GetStringValue(root, path);
+	if (read == "")
+		return defaultValue;
+	conversion_stream << std::hex << read;
+	if (conversion_stream.fail())
+		return defaultValue;
 	uint16_t returnValue;
 	conversion_stream >> returnValue;
+	if (conversion_stream.fail())
+		return defaultValue;
 	return returnValue;
 }
 
